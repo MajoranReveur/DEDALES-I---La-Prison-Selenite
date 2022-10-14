@@ -1,0 +1,138 @@
+'Menu Principal
+DEDALES I
+LA PRISON SELENITE
+Demo
+Quitter
+'Menu
+Menu
+Reprendre
+Inventaire
+Cartes
+???
+???
+Quitter
+Sortir
+'Inventaire
+Inventaire
+Ouvrir
+Deplacer
+Lacher
+Retour
+'Pas d'ouverture
+Cet objet ne peut pas etre ouvert.
+'Pas de drop
+Vous ne pouvez rien mettre sur le sol.
+'Deplacement
+Deplacement en cours...
+Vous ne pouvez pas poser l'objet ici.
+'Noms de Zones
+Entrepot
+Cles
+Cauchemars
+Songes
+Oubliettes
+'Menu des Cartes
+Changer : Espace
+??
+Affichage
+Oui
+Non
+'Pas de cartes
+Vous n'avez pas la carte de l'etage.
+'Pas de quoi prendre
+Pas de quoi prendre...
+'Noms d'objets
+Rien
+Echelle Ascendante
+Echelle Descendante
+Armoire
+Paquer de Cartes
+Attrape-Reves
+Oreiller
+Trousseau
+Carte
+Talkie-Walkie
+Lampe Torche
+Miroir
+Plume d'Oubli
+Pile
+Carte de Tarot
+Bonbon
+Cle
+Sceau
+Citrouille
+Ordinateur
+Placard
+'Noms de Cartes de Tarot
+Rien
+I - Le Magicien
+II - La Grande Pretresse
+III - L'Imperatrice
+IV - L'Empereur
+V - L'Hierophante
+VI - Les Amoureux
+VII - Le Chariot
+VIII - La Justice
+IX - L'Hermite
+X - La Roue de Fortune
+XI - La Force
+XII - Le Pendu
+XIII - La Mort
+XIV - Temperance
+XV - Le Diable
+XVI - La Tour
+XVII - L'Etoile
+XVIII - La Lune
+XIX - Le Soleil
+XX - Le Jugement
+XXI - Le Monde
+Le Joker
+L'Excuse
+'Cartes de Tarot abrégées
+Rien
+Magicien
+Pretresse
+Imperatrice
+Empereur
+Hierophante
+Amoureux
+Chariot
+Justice
+Hermite
+Roue de Fortune
+Force
+Pendu
+Mort
+Temperance
+Diable
+Tour
+Etoile
+Lune
+Soleil
+Jugement
+Monde
+Joker
+Excuse
+'Interractions avec objets
+'Sceau
+Un sceau vous bloque la route.
+Un sceau de type # vous barre la route.
+Vous ne pouvez pas l'ouvrir.
+Ouvrir
+Ne rien faire
+'Notification de cle
+Cle liberee !
+'Ordinateur
+C'est un ordinateur.
+'Placard
+C'est un placard.
+'Armoire Electrique
+Il y a une armoire electrique.
+Allumer
+Eteindre
+'Personnages
+Nihil
+Sarah
+Emma
+Mathias
+Saihtam

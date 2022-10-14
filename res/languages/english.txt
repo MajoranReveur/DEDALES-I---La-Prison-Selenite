@@ -1,0 +1,138 @@
+'Main Menu
+DEDALES I
+THE SELENITE JAIL
+Demo
+Quit
+'Menu
+Menu
+Continue
+Inventory - Useless
+Maps
+???
+???
+Quit
+Get out
+'Inventory
+Inventory
+Open
+Move
+Drop
+Back
+'No openning
+This item can't be opened.
+'Pas de drop
+You can't put anything on the floor.
+'Deplacement
+Moving...
+You can't move the item here.
+'Zone Names
+Store
+Keys
+Nightmares
+Dreams
+Oubliettes
+'Map Menu
+Change : Space
+--
+Printing
+Yes
+No
+'No maps
+You don't have the floor's map.
+'No take
+Nothing to take it...
+'Item names
+Nothing
+Ascending Ladder
+Descending Ladder
+Electrical Cabinet
+Pack of Cards
+Dream Catcher
+Pillow
+Bunch of Keys
+Map
+Talkie-Walkie
+Flashlight
+Mirror
+Feather of Oblivion
+Battery
+Tarot Card
+Candy
+Key
+Seal
+Pumpkin
+Computer
+Cupboard
+'Tarot Cards Names
+Nothing
+I - The Magician
+II - The High Priestess
+III - The Empress
+IV - The Emperor
+V - The Hierophant
+VI - The Lovers
+VII - The Chariot
+VIII - Justice
+IX - The Hermit
+X - Wheel of Fortune
+XI - Strength
+XII - The Hanging Man
+XIII - Death
+XIV - Temperance
+XV - The Devil
+XVI - The Tower
+XVII - The Star
+XVIII - The Moon
+XIX - The Sun
+XX - Jugement
+XXI - The World
+Joker
+The Fool
+'Small Tarot Cards Names
+Nothing
+Magician
+Priestess
+Empress
+Emperor
+Hierophant
+Lovers
+Chariot
+Justice
+Hermit
+Fortune
+Strength
+Hanging Man
+Death
+Temperance
+Devil
+Tower
+Star
+Moon
+Sun
+Jugement
+World
+Joker
+Fool
+'Item Interractions
+'Seal
+A seal is blocking the path.
+A seal of type # is blocking the path.
+You can't open it.
+Open
+Do nothing
+'Notification de cle
+Key released !
+'Computer
+It's a computer.
+'Cupboard
+It's a cupboard.
+'Electrical Cabinet
+There's an electrical cabinet.
+Switch on
+Switch off
+'Personnages
+Nihil
+Sarah
+Emma
+Mathias
+Saihtam
