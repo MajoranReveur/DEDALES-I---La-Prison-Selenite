@@ -106,6 +106,7 @@ void write_map(struct map m)
         write_item_list(m.items[i], m.y);
         i++;
     }
+    fputc('\n', file);
 }
 
 void write_map_list(struct map *list, int size)

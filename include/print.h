@@ -3,6 +3,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include "tools.h"
+#include "input.h"
+#include "structures.h"
 
 SDL_Window* window;
 SDL_Renderer* renderer;
@@ -26,8 +28,9 @@ void print_error(char* text); //TODO
 
 //Text functions
 void print_text(int x, int y, char* text, int size, int color);
-void print_int(int x, int y, long long value, int printable, int size, int color);
+void print_int(int x, int y, long long value, int to_fill, int size, int color);
 void print_text_centered(int x, int y, char* text, int size, int color, int length);
+void print_int_centered(int x, int y, long long value, int to_fill, int size, int color, int length);
 
 //Sprite functions
 void display_sprite(int type, int x, int y, int size, int column, int line);
@@ -35,7 +38,9 @@ void display_cardsprite(int x, int y, int id, int frame);
 void print_characters(int x, int y, int* requests, int delayX, int delayY, int visibility, char* savemap, int length);
 
 //Map functions
-int angle_from_neighbor(char top, char right, char diagonal);
+int angle_type(char top, char right, char diagonal);
 void display_map(int x, int y, int* map, int visibility, char* savemap, int* items, int* item_values, int* visible, int* requests);
-void display_minimap(int x, int y, int* map, char* character_map, int a, int b);
+void display_map_full(int x, int y, struct map map);
+void display_minimap(int x, int y, struct map map, char **visible_map);
+void display_minimap_full(int x, int y, struct map map);
 void display_littlemap(int x, int y, int* map, char* character_map, int* items, int* item_values, int mode);

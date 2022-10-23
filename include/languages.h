@@ -1,5 +1,8 @@
 #pragma once
-#include "files.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <io.h>
+#include "tools.h"
 
 char** main_menu_texts;
 char** menu_texts;
@@ -24,3 +27,5 @@ char** request_characters_texts;
 char* texts[200];
 
 void update_texts();
+
+char language_load(char* language, char first_one);

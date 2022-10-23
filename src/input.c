@@ -64,7 +64,7 @@ void string_input(char* rep, size_t length, char *instruction)
 	size_t position = 0;
 	size_t camera = 0;
 	SDL_Event event;
-	char ending = 0;
+	char ending = (inputs[9] != 0);
 	char single_letter[2];
 	single_letter[1] = 0;
 	rect(0, 0, 1104, 704, 0, 0, 0);
@@ -88,7 +88,10 @@ void string_input(char* rep, size_t length, char *instruction)
 		print_refresh();
 		SDL_WaitEvent(&event);
 		if (event.type == SDL_QUIT)
+		{
 			ending = 1;
+			inputs[9] = 1;
+		}
 		else if (event.type == SDL_KEYDOWN)
 		{
 			if (event.key.keysym.sym == SDLK_BACKSPACE && position)
@@ -148,30 +151,33 @@ void string_input(char* rep, size_t length, char *instruction)
 
 int int_input(int n, int x, int y)
 {
-	rect(x + 5, y + 5, 120, 90, 200, 200, 200);
-	cursor(x, y, 130, 100, 0, 0, 255);
-	int dx = 1;
-	int i = 3;
-	char number[] = { 0,0 };
-	while (i)
-	{
-		i--;
-		number[0] = (n / dx) % 10 + 48;
-		print_text(x + 20 + 30 * i, y + 20, number, 0, 0);
-		dx *= 10;
-	}
-	dx = 100;
+	int dx = 100;
+	int i = 0;
+	char number[2] = { 0, 0 };
 	inputs[0] = 0;
 	inputs[1] = 0;
 	while (!inputs[0] && !inputs[1] && !inputs[9])
 	{
-		number[0] = (n / dx) % 10 + 48;
-		rect(x + 20 + i * 30, y + 20, 30, 50, 200, 200, 200);
-		print_text(x + 20 + 30 * i, y + 20, number, 0, 0);
-		rect(x + 20 + i * 30, y + 70, 30, 5, 0, 0, 0);
+		int j = 3;
+		int delta = 1;
+		while (j)
+		{
+			j--;
+			number[0] = (n / delta) % 10 + 48;
+			print_text(x + 15 * j, y, number, 1, 1 + (i == j));
+			delta *= 10;
+		}
 		print_refresh();
-		load_input();
-		rect(x + 20 + i * 30, y + 70, 30, 5, 200, 200, 200);
+		load_input_long();
+		j = 3;
+		delta = 1;
+		while (j)
+		{
+			j--;
+			number[0] = (n / delta) % 10 + 48;
+			print_text(x + 15 * j, y, number, 1, (inputs[0] || inputs[1]));
+			delta *= 10;
+		}
 		if (inputs[4] && dx != 100)
 		{
 			dx *= 10;

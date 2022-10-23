@@ -33,6 +33,8 @@ void int_to_str(char* str, int value, int to_fill)
 			value /= 10;
 		}
 	}
+	else
+		str[0] = 0;
 }
 
 void concat_str(char* dest, char** str, size_t dest_length, int str_size)

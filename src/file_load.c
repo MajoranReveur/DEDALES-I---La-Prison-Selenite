@@ -214,7 +214,7 @@ char load_map(struct map *m)
         return 0;
     }
     int i = 0;
-    while (i < m-> x)
+    while (i < m->x)
     {
         m->cells[i] = NULL;
         m->items[i] = NULL;
@@ -269,7 +269,17 @@ char load_map_list(struct map *list, int size)
         i++;
     }
     if (!valid)
+    {
+        while (i)
+        {
+            i--;
+            free_map(list[i]);
+            list[i].x = 0;
+            list[i].cells = NULL;
+            list[i].items = NULL;
+        }
         return 0;
+    }
     return check_endline();
 }
 
@@ -278,7 +288,7 @@ char load_project(struct project *p)
     char valid = load_int_list(p->parameters, 16);
     if (!valid)
         return 0;
-    int i = 0;
+    long i = 0;
     while (i < 5)
     {
         p->requests[i] = malloc(sizeof(struct request) * p->parameters[i + 10]);
@@ -302,6 +312,25 @@ char load_project(struct project *p)
         }
         free(p->containers);
         return 0;
+    }
+    i = 0;
+    while (i < p->parameters[15])
+    {
+        p->containers[i].items = NULL;
+        i++;
+    }
+    i = 0;
+    while (i < 5)
+    {
+        int j = 0;
+        while (j < p->parameters[i + 5])
+        {
+            p->maps[i][j].x = 0;
+            p->maps[i][j].cells = NULL;
+            p->maps[i][j].items = NULL;
+            j++;
+        }
+        i++;
     }
     i = 0;
     struct position pos;

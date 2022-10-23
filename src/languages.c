@@ -42,3 +42,77 @@ void update_texts()
 	electrical_texts = mobile_texts + MOBILE_T;
 	request_characters_texts = electrical_texts + ELECTRICAL_T;
 }
+
+char string_load(FILE* file, char** result)
+{
+	fpos_t position;
+	size_t len = 1;
+	fgetpos(file, &position);
+	char b = fgetc(file);
+	while (b == '\'')
+	{
+		while (b != '\n' && b != EOF)
+			b = fgetc(file);
+		fgetpos(file, &position);
+		b = fgetc(file);
+	}
+	while (b != '\n' && b != EOF)
+	{
+		b = fgetc(file);
+		len++;
+	}
+	fsetpos(file, &position);
+	char* str = calloc(len, sizeof(char));
+	if (!str)
+		return 0;
+	b = fgetc(file);
+	size_t a = 0;
+	while (b != '\n' && b != EOF)
+	{
+		str[a] = b;
+		a++;
+		b = fgetc(file);
+	}
+	*result = str;
+	return 1;
+}
+
+char language_load(char* language, char first_one)
+{
+    char* file_fields[3] = {
+        "res/languages/",
+        language,
+        ".txt"
+    };
+    char filename[151] = { 0 };
+    concat_str(filename, file_fields, 150, 3);
+	FILE* file = fopen(filename, "r");
+	char* new_texts[200];
+	if (file)
+	{
+		int a = 0;
+		char valid = 1;
+		while (a < 200 && valid)
+		{
+			valid = string_load(file, new_texts + a);
+			a++;
+		}
+		if (valid)
+		{
+			while (a)
+			{
+				a--;
+				if (!first_one)
+					free(texts[a]);
+				texts[a] = new_texts[a];
+			}
+			return 1;
+		}
+		while (a)
+		{
+			a--;
+			free(new_texts[a]);
+		}
+	}
+	return 0;
+}

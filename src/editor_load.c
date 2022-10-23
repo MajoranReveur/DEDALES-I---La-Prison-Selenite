@@ -17,5 +17,7 @@ void project_load()
                 done = 1;
             }
         }
+        else
+            done = 1;
     }
 }

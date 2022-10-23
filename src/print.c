@@ -1,5 +1,4 @@
 #include "print.h"
-#include "input.h"
 
 const SDL_Color text_colors[6] = {
 	{0, 0, 0},
@@ -119,17 +118,24 @@ void print_text_centered(int x, int y, char* text, int size, int color, int leng
 	int h = 0;
 	SDL_QueryTexture(texture, NULL, NULL, &w, &h);
 	SDL_Rect dest = { x,y,w,h };
-	dest.x = (length - dest.w) / 2;
+	dest.x = x + (length - dest.w) / 2;
 	SDL_RenderCopy(renderer, texture, NULL, &dest);
 	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(surface);
 }
 
-void print_int(int x, int y, long long value, int printable, int size, int color)
+void print_int(int x, int y, long long value, int to_fill, int size, int color)
 {
 	char number[20];
-	int_to_str(number, value, printable);
+	int_to_str(number, value, to_fill);
 	print_text(x, y, number, size, color);
+}
+
+void print_int_centered(int x, int y, long long value, int to_fill, int size, int color, int length)
+{
+	char number[20];
+	int_to_str(number, value, to_fill);
+	print_text_centered(x, y, number, size, color, length);
 }
 
 void print_error(char* text)
@@ -170,16 +176,6 @@ void rect_alpha(int x, int y, int w, int h, int r, int g, int b, int alpha)
 }
 
 
-
-
-void cursor(int x, int y, int w, int h, int r, int g, int b)
-{
-	rect(x + 5, y, w - 10, 10, r, g, b);
-	rect(x + 5, y + h - 10, w - 10, 10, r, g, b);
-	rect(x, y + 5, 10, h - 10, r, g, b);
-	rect(x + w - 10, y + 5, 10, h - 10, r, g, b);
-}
-
 void display_sprite(int type, int x, int y, int size, int column, int line)
 {
 	SDL_Rect dest = { x, y, size, size };
@@ -187,7 +183,7 @@ void display_sprite(int type, int x, int y, int size, int column, int line)
 	SDL_RenderCopy(renderer, sprites[type], &source, &dest);
 }
 
-int angle_from_neighbor(char top, char right, char diagonal)
+int angle_type(char top, char right, char diagonal)
 {
 	if (!top)
 	{
@@ -200,6 +196,49 @@ int angle_from_neighbor(char top, char right, char diagonal)
 	if (!diagonal)
 		return 3;
 	return 4;
+}
+
+void display_minimap(int x, int y, struct map map, char** visible_map)
+{
+	rect(0, 0, 704, 704, 0, 0, 0);
+	int i = 0;
+	while (i < 88 && x + i < map.x)
+	{
+		int j = 0;
+		while (j < 88 && y + j < map.y)
+		{
+			if (x + i >= 0 && y + j >= 0 && visible_map[x + i][y + j])
+				display_sprite(2, i * 8, j * 8, 8, 0, 0);
+			j++;
+		}
+		i++;
+	}
+}
+
+void display_minimap_full(int x, int y, struct map map)
+{
+	rect(0, 0, 704, 704, 0, 0, 0);
+	int i = 0;
+	while (i < 88 && x + i < map.x)
+	{
+		int j = 0;
+		while (j < 88 && y + j < map.y)
+		{
+			if (x + i >= 0 && y + j >= 0)
+				display_sprite(2, i * 8, j * 8, 8, map.cells[x+i][y+j], 0);
+			j++;
+		}
+		i++;
+	}
+}
+
+
+void cursor(int x, int y, int w, int h, int r, int g, int b)
+{
+	rect(x + 5, y, w - 10, 10, r, g, b);
+	rect(x + 5, y + h - 10, w - 10, 10, r, g, b);
+	rect(x, y + 5, 10, h - 10, r, g, b);
+	rect(x + w - 10, y + 5, 10, h - 10, r, g, b);
 }
 
 void display_map(int x, int y, int* map, int visibility, char* savemap, int* items, int* item_values, int* visible, int* requests)
@@ -258,10 +297,10 @@ void display_map(int x, int y, int* map, int visibility, char* savemap, int* ite
 					right = map[target + 1] == map[target];
 				int printx = i * 64 - a * 8;
 				int printy = j * 64 - b * 8;
-				display_sprite(0, printx, printy, 32, map[target] * 2, angle_from_neighbor(top, left, topleft) * 2);
-				display_sprite(0, printx + 32, printy, 32, map[target] * 2 + 1, angle_from_neighbor(top, right, topright) * 2);
-				display_sprite(0, printx, printy + 32, 32, map[target] * 2, angle_from_neighbor(down, left, downleft) * 2 + 1);
-				display_sprite(0, printx + 32, printy + 32, 32, map[target] * 2 + 1, angle_from_neighbor(down, right, downright) * 2 + 1);
+				display_sprite(0, printx, printy, 32, map[target] * 2, angle_type(top, left, topleft) * 2);
+				display_sprite(0, printx + 32, printy, 32, map[target] * 2 + 1, angle_type(top, right, topright) * 2);
+				display_sprite(0, printx, printy + 32, 32, map[target] * 2, angle_type(down, left, downleft) * 2 + 1);
+				display_sprite(0, printx + 32, printy + 32, 32, map[target] * 2 + 1, angle_type(down, right, downright) * 2 + 1);
 				/*if (y - 5 + j == 0 || map[target - *map] == 2)
 					display_tilesprite(printx, printy - 64, 2);*/
 				if (items[targetsave])
@@ -285,21 +324,54 @@ void display_map(int x, int y, int* map, int visibility, char* savemap, int* ite
 	}
 }
 
-void display_minimap(int x, int y, int* map, char* character_map, int a, int b)
+
+void display_map_full(int x, int y, struct map map)
 {
-	rect(a, b, 704, 704, 0, 0, 0);
+	rect(0, 0, 704, 704, 0, 0, 0);
 	int i = 0;
-	while (i < 88 && x + i < *map)
+	while (i < 11 && x + i < map.x)
 	{
 		int j = 0;
-		while (j < 88 && y + j < map[1])
+		while (j < 11 && y + j < map.y)
 		{
-			char insums = (x + i >= 0);
-			char incolumns = (y + j >= 0);
-			int target = 2 + (*map * (y + j) + x + i);
-			if (insums && incolumns && character_map[target - 1])
+			if (x + i >= 0 && y + j >= 0)
 			{
-				display_sprite(2, i * 8 + a, j * 8 + b, 8, map[target], 0);
+				int a = x + i;
+				int b = y + j;
+				char top = 0;
+				char topleft = 0;
+				char topright = 0;
+				char left = 0;
+				char right = 0;
+				char downleft = 0;
+				char downright = 0;
+				char down = 0;
+				if (b > 0)
+				{
+					top = map.cells[a][b-1] == map.cells[a][b];
+					if (a > 0)
+						topleft = map.cells[a-1][b-1] == map.cells[a][b];
+					if (a < map.x - 1)
+						topright = map.cells[a+1][b-1] == map.cells[a][b];
+				}
+				if (b < map.y - 1)
+				{
+					down = map.cells[a][b+1] == map.cells[a][b];
+					if (a > 0)
+						downleft = map.cells[a-1][b+1] == map.cells[a][b];
+					if (a < map.x - 1)
+						downright = map.cells[a+1][b+1] == map.cells[a][b];
+				}
+				if (a > 0)
+					left = map.cells[a-1][b] == map.cells[a][b];
+				if (a < map.x - 1)
+					right = map.cells[a+1][b] == map.cells[a][b];
+				int print_x = i * 64;
+				int print_y = j * 64;
+				display_sprite(0, print_x, print_y, 32, map.cells[a][b] * 2, angle_type(top, left, topleft) * 2);
+				display_sprite(0, print_x + 32, print_y, 32, map.cells[a][b] * 2 + 1, angle_type(top, right, topright) * 2);
+				display_sprite(0, print_x, print_y + 32, 32, map.cells[a][b] * 2, angle_type(down, left, downleft) * 2 + 1);
+				display_sprite(0, print_x + 32, print_y + 32, 32, map.cells[a][b] * 2 + 1, angle_type(down, right, downright) * 2 + 1);
 			}
 			j++;
 		}
