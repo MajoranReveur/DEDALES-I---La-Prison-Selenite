@@ -14,6 +14,7 @@ char** zones_texts;
 char** maps_menu_texts;
 char** no_map_texts;
 char** no_take_texts;
+char** cells_texts;
 char** items_texts;
 char** cards_texts;
 char** small_card_texts;

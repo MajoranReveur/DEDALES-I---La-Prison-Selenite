@@ -1,12 +1,13 @@
 #include "print.h"
 
-const SDL_Color text_colors[6] = {
-	{0, 0, 0},
-	{255, 255, 255},
-	{255, 0, 0},
-	{0, 255, 0},
-	{0, 0, 255},
-	{255, 255, 0}
+const SDL_Color text_colors[7] = {
+	{0, 0, 0}, //0 - Black
+	{255, 255, 255}, //1 - White
+	{255, 0, 0}, //2 - Red
+	{0, 255, 0}, //3 - Green
+	{0, 0, 255}, //4 - Blue
+	{255, 255, 0}, //5 - Yellow
+	{100, 100, 100}, //6 - Gray
 };
 
 char print_init(char* police_path, char mode)
@@ -159,6 +160,13 @@ void print_error(char* text)
 	inputs[0] = 0;
 }
 
+void print_error_int(int value)
+{
+	char number[30] = { 0 };
+	int_to_str(number, value, 0);
+	print_error(number);
+}
+
 void rect(int x, int y, int w, int h, int r, int g, int b)
 {
 	SDL_Rect rect;
@@ -235,10 +243,10 @@ void display_minimap_full(int x, int y, struct map map)
 
 void cursor(int x, int y, int w, int h, int r, int g, int b)
 {
-	rect(x + 5, y, w - 10, 10, r, g, b);
-	rect(x + 5, y + h - 10, w - 10, 10, r, g, b);
-	rect(x, y + 5, 10, h - 10, r, g, b);
-	rect(x + w - 10, y + 5, 10, h - 10, r, g, b);
+	rect(x + 4, y, w - 8, 8, r, g, b);
+	rect(x + 4, y + h - 8, w - 8, 8, r, g, b);
+	rect(x, y + 4, 8, h - 8, r, g, b);
+	rect(x + w - 8, y + 4, 8, h - 8, r, g, b);
 }
 
 void display_map(int x, int y, int* map, int visibility, char* savemap, int* items, int* item_values, int* visible, int* requests)
@@ -325,7 +333,7 @@ void display_map(int x, int y, int* map, int visibility, char* savemap, int* ite
 }
 
 
-void display_map_full(int x, int y, struct map map)
+void display_map_full(int x, int y, struct map map, char print_item)
 {
 	rect(0, 0, 704, 704, 0, 0, 0);
 	int i = 0;
@@ -372,6 +380,8 @@ void display_map_full(int x, int y, struct map map)
 				display_sprite(0, print_x + 32, print_y, 32, map.cells[a][b] * 2 + 1, angle_type(top, right, topright) * 2);
 				display_sprite(0, print_x, print_y + 32, 32, map.cells[a][b] * 2, angle_type(down, left, downleft) * 2 + 1);
 				display_sprite(0, print_x + 32, print_y + 32, 32, map.cells[a][b] * 2 + 1, angle_type(down, right, downright) * 2 + 1);
+				if (map.items[a][b].type && print_item)
+					display_sprite(3, print_x, print_y, 64, map.items[a][b].type - 1, 0);
 			}
 			j++;
 		}
@@ -425,7 +435,7 @@ void print_characters(int x, int y, int* requests, int delayX, int delayY, int v
 	}
 }
 
-void display_cardsprite(int x, int y, int id, int frame)
+void display_cardsprite(int x, int y, int id)
 {
 	SDL_Rect dest = { x, y, 32, 64 };
 	SDL_Rect source = { id * 32, 0, 32, 64 };

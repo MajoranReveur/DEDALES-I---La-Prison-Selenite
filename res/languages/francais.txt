@@ -41,28 +41,46 @@ Non
 Vous n'avez pas la carte de l'etage.
 'Pas de quoi prendre
 Pas de quoi prendre...
+'Noms de cases
+Sol
+Glace
+Mur
+Vers la Gauche
+Vers le Bas
+Vers le Haut
+Vers la Droite
+Case verte
+Case rouge
 'Noms d'objets
 Rien
 Echelle Ascendante
 Echelle Descendante
-Armoire
-Paquer de Cartes
-Attrape-Reves
-Oreiller
-Trousseau
-Carte
-Talkie-Walkie
-Lampe Torche
-Miroir
-Plume d'Oubli
-Pile
-Carte de Tarot
-Bonbon
-Cle
-Sceau
-Citrouille
+Armoire Electrique
 Ordinateur
 Placard
+Carte
+Citrouille
+Paquet de Cartes
+Trousseau
+Attrape-Reves
+Oreiller
+Talkie-Walkie
+Lampe Torche
+Bonbon
+Carte de Tarot
+Cle
+Songe
+Cauchemar
+Residu de Cauchemar
+Demence
+Pile
+Sceau
+Miroir
+Plume d'Argent
+Trou de Memoire
+Halo de Lucidite
+Pensee Positive
+Pensee Negative
 'Noms de Cartes de Tarot
 Rien
 I - Le Magicien
