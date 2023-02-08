@@ -7,6 +7,7 @@
 #include "tools.h"
 
 FILE* file;
+extern char file_saved;
 
 void write_int(int value);
 

@@ -8,6 +8,8 @@
 
 #include <stdlib.h>
 
+extern char file_loaded;
+
 FILE* file;
 
 char check_endline();

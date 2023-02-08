@@ -57,12 +57,12 @@ void update_camera(int zone, int map)
 
 int cell_choice(int type)
 {
-    inputs[0] = 0;
-    inputs[1] = 0;
+    inputs[5] = 0;
     inputs[6] = 0;
+    inputs[10] = 0;
     int i = type % 6;
     int j = type / 6;
-    while (!inputs[0] && !inputs[1] && !inputs[9])
+    while (!inputs[0] && !inputs[5] && !inputs[6])
     {
         int y = 0;
         rect(104, 92, 496, 276, 0, 0, 255);
@@ -82,13 +82,13 @@ int cell_choice(int type)
             print_text_centered(112, 280, cells_texts[i + j * 6], 1, 1, 480);
         print_refresh();
         load_input_long();
-        if (inputs[2] && j)
+        if (inputs[1] && j)
             j--;
-        if (inputs[3] && j < 1)
+        if (inputs[2] && j < 1)
             j++;
-        if (inputs[4] && i)
+        if (inputs[3] && i)
             i--;
-        if (inputs[5] && i < 5)
+        if (inputs[4] && i < 5)
             i++;
     }
     if (i + j * 6 < 9)
@@ -99,10 +99,10 @@ int cell_choice(int type)
 void modify_cell_map(int zone, int map)
 {
     int type = 0;
-    inputs[0] = 0;
-    inputs[1] = 0;
+    inputs[5] = 0;
     inputs[6] = 0;
-    while (!inputs[9] && !inputs[1])
+    inputs[10] = 0;
+    while (!inputs[0] && !inputs[6])
     {
         display_map_full(x_camera, y_camera, project_data.maps[zone][map], 0);
         rect(704, 0, 400, 704, 0, 0, 0);
@@ -118,20 +118,20 @@ void modify_cell_map(int zone, int map)
         print_text_centered(704, 630, y_printer, 1, 1, 400);
         print_refresh();
         load_input_long();
-        if (inputs[0])
+        if (inputs[5])
         {
             if (x_cursor >= 0 && x_cursor < project_data.maps[zone][map].x && y_cursor >= 0 && y_cursor < project_data.maps[zone][map].y)
                 project_data.maps[zone][map].cells[x_cursor][y_cursor] = type;
         }
-        if (inputs[6])
+        if (inputs[10])
             type = cell_choice(type);
-        if (inputs[2])
+        if (inputs[1])
             y_cursor--;
-        if (inputs[3])
+        if (inputs[2])
             y_cursor++;
-        if (inputs[4])
+        if (inputs[3])
             x_cursor--;
-        if (inputs[5])
+        if (inputs[4])
             x_cursor++;
         update_camera(zone, map);
     }
@@ -139,10 +139,10 @@ void modify_cell_map(int zone, int map)
 
 void modify_item_map(int zone, int map)
 {
-    inputs[0] = 0;
-    inputs[1] = 0;
+    inputs[5] = 0;
     inputs[6] = 0;
-    while (!inputs[9] && !inputs[1])
+    inputs[10] = 0;
+    while (!inputs[0] && !inputs[6])
     {
         display_map_full(x_camera, y_camera, project_data.maps[zone][map], 1);
         rect(704, 0, 400, 704, 0, 0, 0);
@@ -233,7 +233,7 @@ void modify_item_map(int zone, int map)
         print_text_centered(704, 630, y_printer, 1, 1, 400);
         print_refresh();
         load_input_long();
-        if (inputs[0])
+        if (inputs[5])
         {
             if (x_cursor >= 0 && x_cursor < project_data.maps[zone][map].x && y_cursor >= 0 && y_cursor < project_data.maps[zone][map].y)
             {
@@ -242,13 +242,13 @@ void modify_item_map(int zone, int map)
                 project_data.maps[zone][map].items[x_cursor][y_cursor] = item;
             }
         }
-        if (inputs[2])
+        if (inputs[1])
             y_cursor--;
-        if (inputs[3])
+        if (inputs[2])
             y_cursor++;
-        if (inputs[4])
+        if (inputs[3])
             x_cursor--;
-        if (inputs[5])
+        if (inputs[4])
             x_cursor++;
         update_camera(zone, map);
     }
@@ -256,10 +256,10 @@ void modify_item_map(int zone, int map)
 
 void move_cursor(int zone, int map)
 {
-    inputs[0] = 0;
-    inputs[1] = 0;
+    inputs[5] = 0;
     inputs[6] = 0;
-    while (!inputs[9] && !inputs[1] && !inputs[0])
+    inputs[10] = 0;
+    while (!inputs[0] && !inputs[5] && !inputs[6])
     {
         display_map_full(x_camera, y_camera, project_data.maps[zone][map], 0);
         rect(704, 0, 400, 704, 0, 0, 0);
@@ -270,13 +270,13 @@ void move_cursor(int zone, int map)
         cursor((x_cursor - x_camera) * 64, (y_cursor - y_camera) * 64, 64, 64, 255, 0, 0);
         print_refresh();
         load_input_long();
-        if (inputs[2])
+        if (inputs[1])
             y_cursor--;
-        if (inputs[3])
+        if (inputs[2])
             y_cursor++;
-        if (inputs[4])
+        if (inputs[3])
             x_cursor--;
-        if (inputs[5])
+        if (inputs[4])
             x_cursor++;
         update_camera(zone, map);
     }
@@ -526,10 +526,10 @@ void modify_map(int zone, int map)
     char quit = 0;
     update_camera(zone, map);
     int i = 0;
-    while (!inputs[9] && !quit)
+    while (!inputs[0] && !quit)
     {
-        inputs[0] = 0;
-        while (!inputs[9] && !inputs[0])
+        inputs[5] = 0;
+        while (!inputs[0] && !inputs[5])
         {
             display_map_full(x_camera, y_camera, project_data.maps[zone][map], 1);
             rect(704, 0, 400, 704, 0, 0, 0);
@@ -545,12 +545,12 @@ void modify_map(int zone, int map)
             print_text_centered(704, 630, y_printer, 1, 1, 400);
             print_refresh();
             load_input_long();
-            if (inputs[2])
+            if (inputs[1])
                 i = (i + 5) % 6;
-            if (inputs[3])
+            if (inputs[2])
                 i = (i + 1) % 6;
         }
-        if (!inputs[9])
+        if (!inputs[0])
         {
             if (i == 5)
                 quit = 1;

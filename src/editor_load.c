@@ -5,7 +5,7 @@ void project_load()
     char *title = NULL;
     char *author = NULL;
     char done = 0;
-    while (!done && !inputs[9])
+    while (!done && !inputs[0])
     {
         if (file_choice("levels/projects/*[*].txt", &title, &author))
         {

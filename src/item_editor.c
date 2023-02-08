@@ -2,12 +2,12 @@
 
 int item_choice(int type)
 {
-    inputs[0] = 0;
-    inputs[1] = 0;
+    inputs[5] = 0;
     inputs[6] = 0;
+    inputs[10] = 0;
     int i = type % 6;
     int j = type / 6;
-    while (!inputs[0] && !inputs[1] && !inputs[9])
+    while (!inputs[0] && !inputs[5] && !inputs[6])
     {
         int y = 0;
         rect(104, 92, 496, 436, 0, 0, 255);
@@ -29,13 +29,13 @@ int item_choice(int type)
             print_text_centered(112, 500, items_texts[i + j * 6], 1, 1, 480);
         print_refresh();
         load_input_long();
-        if (inputs[2] && j)
+        if (inputs[1] && j)
             j--;
-        if (inputs[3] && j < 4)
+        if (inputs[2] && j < 4)
             j++;
-        if (inputs[4] && i)
+        if (inputs[3] && i)
             i--;
-        if (inputs[5] && i < 5)
+        if (inputs[4] && i < 5)
             i++;
     }
     if (i + j * 6 < 29)
@@ -45,7 +45,7 @@ int item_choice(int type)
 
 void map_choice(int *value, int zone)
 {
-    inputs[0] = 0;
+    inputs[5] = 0;
     rect(104, 92, 496, 436, 0, 0, 255);
     rect(108, 96, 488, 428, 0, 0, 0);
     print_text_centered(112, 150, zones_texts[zone], 1, 1, 480);
@@ -56,7 +56,7 @@ void map_choice(int *value, int zone)
     {
         print_text_centered(112, 300, "Choix impossible.", 1, 2, 480);
         print_refresh();
-        while (!inputs[0] && !inputs[9])
+        while (!inputs[0] && !inputs[5])
             load_input_long();
         *value = 0;
         return;
@@ -66,8 +66,8 @@ void map_choice(int *value, int zone)
     {
         print_text_centered(112, 350, "Valeur invalide.", 1, 2, 480);
         print_refresh();
-        inputs[0] = 0;
-        while (!inputs[0] && !inputs[9])
+        inputs[5] = 0;
+        while (!inputs[0] && !inputs[5])
             load_input_long();
         *value = 0;
         return;
@@ -77,7 +77,7 @@ void map_choice(int *value, int zone)
 
 void candy_choice(int *value)
 {
-    inputs[0] = 0;
+    inputs[5] = 0;
     rect(104, 92, 496, 436, 0, 0, 255);
     rect(108, 96, 488, 428, 0, 0, 0);
     int max = project_data.parameters[5];
@@ -90,7 +90,7 @@ void candy_choice(int *value)
     {
         print_text_centered(112, 300, "Choix impossible.", 1, 2, 480);
         print_refresh();
-        while (!inputs[0] && !inputs[9])
+        while (!inputs[0] && !inputs[5])
             load_input_long();
         *value = 0;
         return;
@@ -100,8 +100,8 @@ void candy_choice(int *value)
     {
         print_text_centered(112, 350, "Valeur invalide.", 1, 2, 480);
         print_refresh();
-        inputs[0] = 0;
-        while (!inputs[0] && !inputs[9])
+        inputs[5] = 0;
+        while (!inputs[0] && !inputs[5])
             load_input_long();
         *value = 0;
         return;
@@ -111,14 +111,14 @@ void candy_choice(int *value)
 
 void place_choice(int *zone, int *map)
 {
-    inputs[0] = 0;
+    inputs[5] = 0;
     inputs[6] = 0;
     rect(104, 92, 496, 436, 0, 0, 255);
     rect(108, 96, 488, 428, 0, 0, 0);
     int i = *zone;
     if (i == 0)
         i = 1; // Default value
-    while (!inputs[9] && !inputs[6] && !inputs[0])
+    while (!inputs[0] && !inputs[5] && !inputs[6])
     {
         rect(104, 92, 496, 436, 0, 0, 255);
         rect(108, 96, 488, 428, 0, 0, 0);
@@ -131,12 +131,12 @@ void place_choice(int *zone, int *map)
         }
         print_refresh();
         load_input_long();
-        if (inputs[2])
+        if (inputs[1])
             i = (i - 1 + 4) % 5 + 1;
-        if (inputs[3])
+        if (inputs[2])
             i = (i - 1 + 1) % 5 + 1;
     }
-    if (inputs[0])
+    if (inputs[5])
     {
         int value = *map;
         map_choice(&value, i - 1);
@@ -150,12 +150,12 @@ void place_choice(int *zone, int *map)
 
 void card_choice(int *value)
 {
-    inputs[0] = 0;
-    inputs[1] = 0;
+    inputs[5] = 0;
     inputs[6] = 0;
+    inputs[10] = 0;
     int i = *value % 8;
     int j = *value / 8;
-    while (!inputs[0] && !inputs[1] && !inputs[9])
+    while (!inputs[0] && !inputs[5] && !inputs[6])
     {
         int y = 0;
         rect(104, 92, 496, 436, 0, 0, 255);
@@ -174,13 +174,13 @@ void card_choice(int *value)
         print_text_centered(112, 450, cards_texts[i + j * 8], 1, 1, 480);
         print_refresh();
         load_input_long();
-        if (inputs[2] && j)
+        if (inputs[1] && j)
             j--;
-        if (inputs[3] && j < 2)
+        if (inputs[2] && j < 2)
             j++;
-        if (inputs[4] && i)
+        if (inputs[3] && i)
             i--;
-        if (inputs[5] && i < 7)
+        if (inputs[4] && i < 7)
             i++;
     }
     *value = i + j * 8;
@@ -285,12 +285,12 @@ void change_type(struct item *item, struct position p, char mode)
 
 void edit_content_card(long ID)
 {
-    inputs[0] = 0;
-    inputs[1] = 0;
+    inputs[5] = 0;
     inputs[6] = 0;
+    inputs[10] = 0;
     int i = 0;
     int j = 0;
-    while (!inputs[0] && !inputs[1] && !inputs[9])
+    while (!inputs[0] && !inputs[5] && !inputs[6])
     {
         int y = 0;
         rect(104, 92, 496, 436, 0, 0, 255);
@@ -317,15 +317,15 @@ void edit_content_card(long ID)
             print_text_centered(112, 450, "Retour", 1, 1, 480);
         print_refresh();
         load_input_long();
-        if (inputs[2] && j)
+        if (inputs[1] && j)
             j--;
-        if (inputs[3] && j < 2)
+        if (inputs[2] && j < 2)
             j++;
-        if (inputs[4] && i)
+        if (inputs[3] && i)
             i--;
-        if (inputs[5] && i < 7)
+        if (inputs[4] && i < 7)
             i++;
-        if (inputs[0])
+        if (inputs[5])
         {
             if (i || j)
             {
@@ -339,7 +339,7 @@ void edit_content_card(long ID)
                     project_data.containers[ID].items[i + j * 8 - 1].type = 6;
                     project_data.containers[ID].items[i + j * 8 - 1].value = i + j * 8;
                 }
-                inputs[0] = 0;
+                inputs[5] = 0;
             }
         }
     }
@@ -347,7 +347,7 @@ void edit_content_card(long ID)
 
 void edit_content_battery(long ID)
 {
-    inputs[0] = 0;
+    inputs[5] = 0;
     rect(104, 92, 496, 436, 0, 0, 255);
     rect(108, 96, 488, 428, 0, 0, 0);
     print_text_centered(112, 180, "Capacite :", 1, 1, 480);
@@ -357,7 +357,7 @@ void edit_content_battery(long ID)
     {
         print_text_centered(112, 300, "Choix impossible.", 1, 2, 480);
         print_refresh();
-        while (!inputs[0] && !inputs[9])
+        while (!inputs[0] && !inputs[5])
             load_input_long();
         return;
     }
@@ -374,8 +374,8 @@ void edit_content_battery(long ID)
     {
         print_text_centered(112, 350, "Valeur invalide.", 1, 2, 480);
         print_refresh();
-        inputs[0] = 0;
-        while (!inputs[0] && !inputs[9])
+        inputs[5] = 0;
+        while (!inputs[0] && !inputs[5])
             load_input_long();
         return;
     }
@@ -393,9 +393,9 @@ void edit_content_battery(long ID)
 void edit_content_level(long ID, int type)
 {
     int item_type = type + 7 - (type == 11) + (type == 10) * 2;
-    inputs[0] = 0;
-    inputs[1] = 0;
+    inputs[5] = 0;
     inputs[6] = 0;
+    inputs[10] = 0;
     char count_by_category[4] = {'x', 0, 0, 0};
     char string_capacity[4] = {0};
     char string_count[4] = {0};
@@ -411,7 +411,7 @@ void edit_content_level(long ID, int type)
     int_to_str(string_capacity, size, 1);
     printf("test");
     i = 0;
-    while (!inputs[0] && !inputs[1] && !inputs[9])
+    while (!inputs[0] && !inputs[5] && !inputs[6])
     {
         int j = 0;
         if (changes)
@@ -474,11 +474,11 @@ void edit_content_level(long ID, int type)
         }
         print_refresh();
         load_input_long();
-        if (inputs[2])
+        if (inputs[1])
             i = (i + category_count + 1) % (category_count + 2);
-        if (inputs[3])
+        if (inputs[2])
             i = (i + 1) % (category_count + 2);
-        if (((inputs[4] && count) || (inputs[5] && count < size)) && i < category_count)
+        if (((inputs[3] && count) || (inputs[4] && count < size)) && i < category_count)
         {
             j = 0;
             int k = 0;
@@ -492,13 +492,13 @@ void edit_content_level(long ID, int type)
                 value = project_data.containers[ID].items[j].value;
                 k++;
             }
-            if (inputs[5])
+            if (inputs[3])
                 add_item(project_data.containers[ID], value, item_type);
             if (inputs[4])
                 remove_item(project_data.containers[ID], value);
             changes = 1;
         }
-        if (inputs[0])
+        if (inputs[5])
         {
             if (i == category_count && count < size)
             {
@@ -517,7 +517,7 @@ void edit_content_level(long ID, int type)
                     changes = 1;
                 }
             }
-            inputs[0] = (i == category_count + 1);
+            inputs[5] = (i == category_count + 1);
         }
     }
 }
@@ -528,7 +528,7 @@ void change_capacity(long ID)
     rect(108, 96, 488, 428, 0, 0, 0);
     print_text_centered(112, 180, "Nouvelle capacite :", 1, 1, 480);
     int value = int_input(project_data.containers[ID].size, 330, 300);
-    inputs[0] = 0;
+    inputs[5] = 0;
     if (value == 0)
     {
         free(project_data.containers[ID].items);
@@ -556,7 +556,7 @@ void change_capacity(long ID)
         {
             print_text_centered(112, 400, "Erreur de memoire.", 1, 2, 480);
             print_refresh();
-            while (!inputs[0] && !inputs[9])
+            while (!inputs[0] && !inputs[5])
                 load_input_long();
         }
     }
@@ -564,12 +564,12 @@ void change_capacity(long ID)
 
 void modify_item(struct item *item, struct position p, char mode) // Mode 0 : creation in an inventory / map, Mode 1 : Merchandise in a request, so no creation
 {
-    inputs[0] = 0;
-    inputs[1] = 0;
+    inputs[5] = 0;
     inputs[6] = 0;
+    inputs[10] = 0;
     char end = 0;
     int i = 0;
-    while (!inputs[9] && !inputs[6] && !inputs[1] && !end)
+    while (!inputs[0] && !inputs[6] && !inputs[10] && !end)
     {
         rect(104, 92, 496, 436, 0, 0, 255);
         rect(108, 96, 488, 428, 0, 0, 0);
@@ -654,11 +654,11 @@ void modify_item(struct item *item, struct position p, char mode) // Mode 0 : cr
         j++;
         print_refresh();
         load_input_long();
-        if (inputs[2])
+        if (inputs[1])
             i = (i + j - 1) % j;
-        if (inputs[3])
+        if (inputs[2])
             i = (i + 1) % j;
-        if (inputs[0])
+        if (inputs[5])
         {
             int value = item->value;
             if (options[i] == 1)
@@ -690,12 +690,12 @@ void modify_item(struct item *item, struct position p, char mode) // Mode 0 : cr
                 rect(108, 96, 488, 428, 0, 0, 0);
                 print_text_centered(112, 180, "Puissance entre 0 et 13 :", 1, 1, 480);
                 value = int_input(value, 330, 300);
-                inputs[0] = 0;
+                inputs[5] = 0;
                 if (value > 13)
                 {
                     print_text_centered(112, 400, "Valeur non valide.", 1, 2, 480);
                     print_refresh();
-                    while (!inputs[0] && !inputs[9])
+                    while (!inputs[0] && !inputs[5])
                         load_input_long();
                     value = item->value;
                 }

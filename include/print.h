@@ -6,31 +6,38 @@
 #include "input.h"
 #include "structures.h"
 
+char software_mode;
+
 SDL_Window* window;
 SDL_Renderer* renderer;
 SDL_Texture* sprites[7];
+SDL_Texture* screen_save;
+SDL_Texture* intermediate_window;
 TTF_Font* police[2];
 const SDL_Color text_colors[7];
 char frame;
 
 //Basic functions
-char print_init(char* police_path, char mode); //Adapt depending of game or editor
+char print_init(char* police_path); //Adapt depending of game or editor
 void print_refresh();
 void print_close();
 char load_sprites(char* paths[]);
 void free_sprites();
 
+void copy_current_screen();
+void paste_last_screen();
+
 //Tool functions
 void rect(int x, int y, int w, int h, int r, int g, int b);
 void rect_alpha(int x, int y, int w, int h, int r, int g, int b, int alpha);
 void cursor(int x, int y, int w, int h, int r, int g, int b); //TODO
-void print_error(char* text); //TODO
+void print_error(const char* text); //TODO
 void print_error_int(int value);
 
 //Text functions
-void print_text(int x, int y, char* text, int size, int color);
+void print_text(int x, int y, const char* text, int size, int color);
 void print_int(int x, int y, long long value, int to_fill, int size, int color);
-void print_text_centered(int x, int y, char* text, int size, int color, int length);
+void print_text_centered(int x, int y, const char* text, int size, int color, int length);
 void print_int_centered(int x, int y, long long value, int to_fill, int size, int color, int length);
 
 //Sprite functions
@@ -45,3 +52,5 @@ void display_map_full(int x, int y, struct map map, char print_item);
 void display_minimap(int x, int y, struct map map, char **visible_map);
 void display_minimap_full(int x, int y, struct map map);
 void display_littlemap(int x, int y, int* map, char* character_map, int* items, int* item_values, int mode);
+
+char check_choice(char* title, char* author);

@@ -2,6 +2,10 @@
 
 #include <stdlib.h>
 
+char file_loaded;
+char file_saved;
+struct project project_data;
+
 struct position
 {
     int zone; //0 : In an inventory

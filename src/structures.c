@@ -40,6 +40,7 @@ void free_project(struct project p)
         i++;
     }
     free(p.containers);
+    file_loaded = 0;
 }
 
 void delete_container(struct project p, long ID)

@@ -1,3 +1,4 @@
+
 #include "file_load.h"
 
 char check_endline()
@@ -382,6 +383,8 @@ char open_project(struct project *p)
     file = NULL;
     if (result)
     {
+        file_loaded = 1;
+        file_saved = 1;
         print_error("Projet charge !");
         return 1;
     }

@@ -17,8 +17,8 @@ void project_create()
         rect(0,0,1104,704,0,0,0);
         print_text_centered(0, 300, "Un projet du meme nom et du meme auteur existe deja.", 1, 2, 1104);
         print_refresh();
-        inputs[0] = 0;
-        while (!inputs[0] && !inputs[9])
+        inputs[5] = 0;
+        while (!inputs[0] && !inputs[5])
             load_input();
     }
     else

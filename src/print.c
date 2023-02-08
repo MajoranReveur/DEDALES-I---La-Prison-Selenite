@@ -10,12 +10,24 @@ const SDL_Color text_colors[7] = {
 	{100, 100, 100}, //6 - Gray
 };
 
-char print_init(char* police_path, char mode)
+void copy_current_screen()
+{
+	SDL_SetRenderTarget(renderer, screen_save);
+    SDL_RenderCopy(renderer, intermediate_window, NULL, NULL);
+	SDL_SetRenderTarget(renderer, intermediate_window);
+}
+
+void paste_last_screen()
+{
+	SDL_RenderCopy(renderer, screen_save, NULL, NULL);
+}
+
+char print_init(char* police_path)
 {
 	frame = 0;
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		return 0;
-	if (mode)
+	if (software_mode)
 		window = SDL_CreateWindow("LPS - Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 704, 704, 0);
 	else
 		window = SDL_CreateWindow("LPS - Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1104, 704, 0); 
@@ -27,20 +39,31 @@ char print_init(char* police_path, char mode)
 			SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 			SDL_RenderClear(renderer);
-			TTF_Init();
-			police[0] = TTF_OpenFont(police_path, 40);
-			police[1] = TTF_OpenFont(police_path, 20);
-			int i = 0;
-			while (i < 7)
+    		SDL_RenderPresent(renderer);
+			intermediate_window = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 1104 - software_mode * 400, 704);
+			screen_save = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 1104 - software_mode * 400, 704);
+			if (intermediate_window && screen_save)
 			{
-				sprites[i] = NULL;
-				i++;
+				SDL_SetRenderTarget(renderer, intermediate_window);
+				TTF_Init();
+				police[0] = TTF_OpenFont(police_path, 40);
+				police[1] = TTF_OpenFont(police_path, 20);
+				int i = 0;
+				while (i < 7)
+				{
+					sprites[i] = NULL;
+					i++;
+				}
+				if (police[0] != NULL && police[1] != NULL)
+					return 1;
+				TTF_CloseFont(police[0]);
+				TTF_CloseFont(police[1]);
+				TTF_Quit();
 			}
-			if (police[0] != NULL && police[1] != NULL)
-				return 1;
-			TTF_CloseFont(police[0]);
-			TTF_CloseFont(police[1]);
-			TTF_Quit();
+			if (intermediate_window)
+				SDL_DestroyTexture(intermediate_window);
+			if (screen_save)
+				SDL_DestroyTexture(screen_save);
 			SDL_DestroyRenderer(renderer);
 		}
 		SDL_DestroyWindow(window);
@@ -50,7 +73,10 @@ char print_init(char* police_path, char mode)
 
 void print_refresh()
 {
+	SDL_SetRenderTarget(renderer, NULL);
+	SDL_RenderCopy(renderer, intermediate_window, NULL, NULL);
 	SDL_RenderPresent(renderer);
+	SDL_SetRenderTarget(renderer, intermediate_window);
 	frame = (frame + 1) % 16;
 }
 
@@ -98,7 +124,7 @@ void free_sprites()
 	}
 }
 
-void print_text(int x, int y, char* text, int size, int color)
+void print_text(int x, int y, const char* text, int size, int color)
 {
 	SDL_Surface* surface = TTF_RenderText_Solid(police[size], text, text_colors[color]);
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
@@ -111,7 +137,7 @@ void print_text(int x, int y, char* text, int size, int color)
 	SDL_FreeSurface(surface);
 }
 
-void print_text_centered(int x, int y, char* text, int size, int color, int length)
+void print_text_centered(int x, int y, const char* text, int size, int color, int length)
 {
 	SDL_Surface* surface = TTF_RenderText_Solid(police[size], text, text_colors[color]);
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
@@ -139,7 +165,7 @@ void print_int_centered(int x, int y, long long value, int to_fill, int size, in
 	print_text_centered(x, y, number, size, color, length);
 }
 
-void print_error(char* text)
+void print_error(const char* text)
 {
 	SDL_Surface* surface = TTF_RenderText_Solid(police[1], text, text_colors[2]);
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
@@ -153,11 +179,11 @@ void print_error(char* text)
 	SDL_RenderCopy(renderer, texture, NULL, &dest);
 	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(surface);
-	inputs[0] = 0;
+	clean_inputs();
 	print_refresh();
-	while (!inputs[9] && !inputs[0])
+	while (!inputs[0] && !inputs[5])
 		load_input();
-	inputs[0] = 0;
+	clean_inputs();
 }
 
 void print_error_int(int value)
@@ -440,4 +466,84 @@ void display_cardsprite(int x, int y, int id)
 	SDL_Rect dest = { x, y, 32, 64 };
 	SDL_Rect source = { id * 32, 0, 32, 64 };
 	SDL_RenderCopy(renderer, sprites[6], &source, &dest);
+}
+
+char check_choice(char* title, char* author)
+{
+	SDL_Surface* surfacetitle = TTF_RenderText_Solid(police[1], title, text_colors[1]);
+	SDL_Surface* surfaceauthor = TTF_RenderText_Solid(police[1], author, text_colors[1]);
+	SDL_Texture* texturetitle = SDL_CreateTextureFromSurface(renderer, surfacetitle);
+	SDL_Texture* textureauthor = SDL_CreateTextureFromSurface(renderer, surfaceauthor);
+	int wtitle = 0;
+	int htitle = 0;
+	SDL_QueryTexture(texturetitle, NULL, NULL, &wtitle, &htitle);
+	int wauthor = 0;
+	int hauthor = 0;
+	SDL_QueryTexture(textureauthor, NULL, NULL, &wauthor, &hauthor);
+	SDL_Rect desttitle = {70, 250, wtitle, htitle};
+	SDL_Rect destauthor = {70, 350, wauthor, hauthor};
+	SDL_Rect srctitle = {0, 0, wtitle, htitle};
+	SDL_Rect srcauthor = {0, 0, wauthor, hauthor};
+	if (wtitle > 964)
+	{
+		desttitle.w = 964;
+		srctitle.w = 964;
+	}
+	if (wauthor > 964)
+	{
+		destauthor.w = 964;
+		srcauthor.w = 964;
+	}
+	rect(50, 100, 1004, 400, 255, 255, 255);
+	clean_inputs();
+	int x = 0;
+	while (!inputs[0] && !inputs[5] && !inputs[6])
+	{
+		rect(58, 108, 988, 384, 0, 0, 0);
+		print_text_centered(58, 120, "Choisir ce fichier ?", 1, 1, 988);
+		print_text(70, 220, "Nom :", 1, 1);
+		print_text(70, 320, "De :", 1, 1);
+		print_text_centered(70, 400, "Oui", 1, 1 + (x == 0), 988);
+		print_text_centered(70, 430, "Non", 1, 1 + (x == 1), 988);
+		SDL_RenderCopy(renderer, texturetitle, &srctitle, &desttitle);
+		SDL_RenderCopy(renderer, textureauthor, &srcauthor, &destauthor);
+		print_refresh();
+		load_input_long();
+		if (inputs[3] && srctitle.x)
+		{
+			if (srctitle.x > 50)
+				srctitle.x -= 50;
+			else
+				srctitle.x = 0;
+		}
+		if (inputs[3] && srcauthor.x)
+		{
+			if (srcauthor.x > 50)
+				srcauthor.x -= 50;
+			else
+				srcauthor.x = 0;
+		}
+		if (inputs[4] && srctitle.x + 906 < wtitle)
+		{
+			if (srctitle.x + 956 < wtitle)
+				srctitle.x += 50;
+			else
+				srctitle.x = wtitle - 956;
+		}
+		if (inputs[4] && srcauthor.x + 906 < wauthor)
+		{
+			if (srcauthor.x + 956 < wauthor)
+				srcauthor.x += 50;
+			else
+				srcauthor.x =  wauthor - 956;
+		}
+		if (inputs[1] || inputs[2])
+			x = !x;
+	}
+	SDL_DestroyTexture(texturetitle);
+	SDL_FreeSurface(surfacetitle);
+	SDL_DestroyTexture(textureauthor);
+	SDL_FreeSurface(surfaceauthor);
+	inputs[6] = 0;
+	return (inputs[5] && x == 0);
 }

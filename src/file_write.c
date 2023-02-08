@@ -157,6 +157,7 @@ char save_project(struct project p)
         return 0;
     }
     write_project(p);
+    file_saved = 1;
     print_error("Projet sauvegarde !");
     fclose(file);
     file = NULL;
