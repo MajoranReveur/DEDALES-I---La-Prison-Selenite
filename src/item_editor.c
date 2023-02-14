@@ -50,9 +50,9 @@ void map_choice(int *value, int zone)
     rect(108, 96, 488, 428, 0, 0, 0);
     print_text_centered(112, 150, zones_texts[zone], 1, 1, 480);
     print_text_centered(112, 180, "Cartes disponibles :", 1, 1, 480);
-    print_int_centered(112, 205, project_data.parameters[5 + zone], 0, 1, 1, 480);
+    print_int_centered(112, 205, project_data.zones[zone].map_number, 0, 1, 1, 480);
     print_refresh();
-    if (project_data.parameters[5 + zone] == 0)
+    if (project_data.zones[zone].map_number == 0)
     {
         print_text_centered(112, 300, "Choix impossible.", 1, 2, 480);
         print_refresh();
@@ -62,7 +62,7 @@ void map_choice(int *value, int zone)
         return;
     }
     int v = int_input(*value, 320, 300);
-    if (v > project_data.parameters[5 + zone] || v == 0)
+    if (v > project_data.zones[zone].map_number || v == 0)
     {
         print_text_centered(112, 350, "Valeur invalide.", 1, 2, 480);
         print_refresh();
@@ -239,7 +239,7 @@ void change_type(struct item *item, struct position p, char mode)
             }
             else
             {
-                long new_ID = project_data.parameters[15];
+                long new_ID = project_data.parameters[10];
                 struct container *new_list = realloc(project_data.containers, sizeof(struct container) * (new_ID + 1));
                 if (new_list == NULL)
                 {
@@ -250,7 +250,7 @@ void change_type(struct item *item, struct position p, char mode)
                 else
                 {
                     project_data.containers = new_list;
-                    project_data.parameters[15]++;
+                    project_data.parameters[10]++;
                     item->ID = new_ID;
                     item->value = 0;
                     project_data.containers[new_ID].items = NULL;

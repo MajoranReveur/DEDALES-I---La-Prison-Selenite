@@ -36,7 +36,7 @@ char load_request_list(struct request *list, int size);
 
 char load_map(struct map *m);
 
-char load_map_list(struct map *list, int size);
+char load_map_list(struct zone *zone);
 
 char load_project(struct project *p);
 

@@ -21,6 +21,18 @@ void write_int_list(int* list, int size)
     fputc('\n', file);
 }
 
+
+void write_char_list(char* list, int size)
+{
+    int i = 0;
+    while (i < size)
+    {
+        write_int(list[i]);
+        i++;
+    }
+    fputc('\n', file);
+}
+
 void write_position(struct position p)
 {
     write_int(p.zone);
@@ -99,11 +111,16 @@ void write_map(struct map m)
 {
     write_int(m.x);
     write_int(m.y);
+    write_int(m.initial_delay);
+    write_int(m.color_length);
+    if (m.color_length)
+        write_int_list(m.color_sequency, m.color_length);
     int i = 0;
     while (i < m.x)
     {
         write_int_list(m.cells[i], m.y);
         write_item_list(m.items[i], m.y);
+        write_char_list(m.thoughts[i], m.y);
         i++;
     }
     fputc('\n', file);
@@ -111,6 +128,7 @@ void write_map(struct map m)
 
 void write_map_list(struct map *list, int size)
 {
+    write_int(size);
     int i = 0;
     while (i < size)
     {
@@ -122,17 +140,22 @@ void write_map_list(struct map *list, int size)
 
 void write_project(struct project p)
 {
-    write_int_list(p.parameters, 16);
+    write_int_list(p.parameters, 12);
     int i = 0;
+    while (i < p.parameters[11])
+    {
+        write_map_list(p.zones[i].maps, p.zones[i].map_number);
+        i++;
+    }
+    i = 0;
     while (i < 5)
     {
         write_position(p.character_positions[i]);
-        write_request_list(p.requests[i], p.parameters[i + 10]);
+        write_request_list(p.requests[i], p.parameters[i + 5]);
         write_item_list(p.inventories[i], 50);
-        write_map_list(p.maps[i], p.parameters[i + 5]);
         i++;
     }
-    write_container_list(p.containers, p.parameters[15]);
+    write_container_list(p.containers, p.parameters[10]);
 }
 
 char save_project(struct project p)

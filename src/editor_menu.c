@@ -5,12 +5,12 @@ void map_choice_menu(int zone)
     char quit = 0;
     while(!inputs[0] && !quit)
     {
-        int map_numbers = project_data.parameters[5 + zone];
+        int map_numbers = project_data.zones[zone].map_number;
         int i = 0;
         int camera = 0;
         rect(0, 0, 1104, 704, 0, 0, 0);
         inputs[5] = 0;
-        while (!inputs[0] && !inputs[5])
+        while (!inputs[0] && !inputs[5] && !inputs[6])
         {
             int j = 0;
             while (j < 11)
@@ -24,7 +24,9 @@ void map_choice_menu(int zone)
                 j++;
             }
             if (i < map_numbers)
-                display_minimap_full(0, 0, project_data.maps[zone][i]);
+                display_minimap_full(0, 0, project_data.zones[zone].maps[i]);
+            else
+                rect(0, 0, 704, 704, 0, 0, 0);
             print_refresh();
             load_input_long();
             if (inputs[1])
@@ -56,7 +58,7 @@ void map_choice_menu(int zone)
                     camera = i - 11;
             }
         }
-        if (!inputs[0])
+        if (inputs[5])
         {
             if (i < map_numbers)
                 modify_map(zone, i);
@@ -68,7 +70,10 @@ void map_choice_menu(int zone)
             if (i == map_numbers + 1)
                 quit = 1;
         }
+        if (inputs[6])
+            quit = 1;
     }
+    clean_inputs();
 }
 
 void zone_choice_menu()
@@ -82,7 +87,7 @@ void zone_choice_menu()
         print_text_centered(0, 50, project_data.author_name, 1, 1, 1104);
         print_text_centered(0, 100, "- Cartes -", 1, 1, 1104);
         inputs[5] = 0;
-        while (!inputs[0] && !inputs[5])
+        while (!inputs[0] && !inputs[5] && !inputs[6])
         {
             print_text_centered(0, 200, "Entrepot", 1, 1 + (i == 0), 1104);
             print_text_centered(0, 250, "Cles", 1, 1 + (i == 1), 1104);
@@ -97,14 +102,17 @@ void zone_choice_menu()
             if (inputs[2])
                 i = (i + 1) % 6;
         }
-        if (!inputs[0])
+        if (inputs[5])
         {
             if (i < 5)
                 map_choice_menu(i);
             if (i == 5)
                 quit = 1;
         }
+        if (inputs[6])
+            quit = 1;
     }
+    clean_inputs();
 }
 
 void modify_project_menu()
@@ -113,13 +121,13 @@ void modify_project_menu()
     while(!inputs[0] && !quit)
     {
         int i = 0;
-        rect(0, 0, 1104, 704, 0, 0, 0);
-        print_text_centered(0, 10, project_data.project_name, 0, 1, 1104);
-        print_text_centered(0, 50, project_data.author_name, 1, 1, 1104);
-        print_text_centered(0, 100, "- Modification de Projet -", 1, 1, 1104);
         inputs[5] = 0;
-        while (!inputs[0] && !inputs[5])
+        while (!inputs[0] && !inputs[5] && !inputs[6])
         {
+            rect(0, 0, 1104, 704, 0, 0, 0);
+            print_text_centered(0, 10, project_data.project_name, 0, 1, 1104);
+            print_text_centered(0, 50, project_data.author_name, 1, 1, 1104);
+            print_text_centered(0, 100, "- Modification de Projet -", 1, 1, 1104);
             print_text_centered(0, 200, "Cartes", 1, 1 + (i == 0), 1104);
             print_text_centered(0, 250, "Personnages", 1, 1 + (i == 1), 1104);
             print_text_centered(0, 300, "Parametres", 1, 1 + (i == 2), 1104);
@@ -131,14 +139,17 @@ void modify_project_menu()
             if (inputs[2])
                 i = (i + 1) % 4;
         }
-        if (!inputs[0])
+        if (inputs[5])
         {
             if (i == 0)
                 zone_choice_menu();
             if (i == 3)
                 quit = 1;
         }
+        if (inputs[6])
+            quit = 1;
     }
+    clean_inputs();
 }
 
 void project_menu()
@@ -151,7 +162,7 @@ void project_menu()
         print_text_centered(0, 10, project_data.project_name, 0, 1, 1104);
         print_text_centered(0, 50, project_data.author_name, 1, 1, 1104);
         inputs[5] = 0;
-        while (!inputs[0] && !inputs[5])
+        while (!inputs[0] && !inputs[5] && !inputs[6])
         {
             print_text_centered(0, 200, "Modifier le projet", 1, 1 + (i == 0), 1104);
             print_text_centered(0, 250, "Analyser", 1, 1 + (i == 1), 1104);
@@ -165,7 +176,7 @@ void project_menu()
             if (inputs[2])
                 i = (i + 1) % 5;
         }
-        if (!inputs[0])
+        if (inputs[5])
         {
             if (i == 0)
                 modify_project_menu();
@@ -177,7 +188,10 @@ void project_menu()
             if (i == 4)
                 quit = 1;
         }
+        if (inputs[6])
+            quit = 1;
     }
+    clean_inputs();
 }
 
 void main_menu_editor()

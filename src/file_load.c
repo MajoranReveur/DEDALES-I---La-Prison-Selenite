@@ -21,6 +21,20 @@ char load_int(int *value)
     return (c == ' ' && !empty);
 }
 
+char load_char(char *value)
+{
+    char c = fgetc(file);
+    char empty = 1;
+    *value = 0;
+    while (c >= '0' && c <= '9')
+    {
+        empty = 0;
+        *value = *value * 10 + c - '0';
+        c = fgetc(file);
+    }
+    return (c == ' ' && !empty);
+}
+
 char load_id(long *ID)
 {
     char c = fgetc(file);
@@ -42,6 +56,20 @@ char load_int_list(int* list, int size)
     while (i < size && valid)
     {
         valid = load_int(list + i);
+        i++;
+    }
+    if (!valid)
+        return 0;
+    return check_endline();
+}
+
+char load_char_list(char* list, int size)
+{
+    int i = 0;
+    char valid = 1;
+    while (i < size && valid)
+    {
+        valid = load_char(list + i);
         i++;
     }
     if (!valid)
@@ -205,6 +233,13 @@ char load_map(struct map *m)
     if (!load_int(&value))
         return 0;
     m->y = value;
+    if (!load_int(&value))
+        return 0;
+    m->initial_delay = value;
+    if (!load_int(&value))
+        return 0;
+    m->color_length = value;
+    m->color_sequency = NULL;
     m->cells = malloc(sizeof(int*) * m->x);
     if (m->cells == NULL)
         return 0;
@@ -214,11 +249,30 @@ char load_map(struct map *m)
         free(m->cells);
         return 0;
     }
+    m->thoughts = malloc(sizeof(char*) * m->x);
+    if (m->thoughts == NULL)
+    {
+        free(m->cells);
+        free(m->items);
+        return 0;
+    }
+    if (m->color_length)
+    {
+        m->color_sequency = malloc(sizeof(int) * m->color_length);
+        if (m->color_sequency == NULL)
+        {
+            free(m->cells);
+            free(m->items);
+            free(m->thoughts);
+            return 0;
+        }
+    }
     int i = 0;
     while (i < m->x)
     {
         m->cells[i] = NULL;
         m->items[i] = NULL;
+        m->thoughts[i] = NULL;
         i++;
     }
     i = 0;
@@ -226,8 +280,9 @@ char load_map(struct map *m)
     while (i < m->x && valid)
     {
         m->cells[i] = malloc(sizeof(int) * m->y);
+        m->thoughts[i] = malloc(sizeof(char) * m->y);
         m->items[i] = malloc(sizeof(struct item) * m->y);
-        valid = (m->cells[i] != NULL && m->items[i] != NULL);
+        valid = (m->cells[i] != NULL && m->items[i] != NULL && m->thoughts[i] != NULL);
         i++;
     }
     if (valid)
@@ -238,6 +293,8 @@ char load_map(struct map *m)
             valid = load_int_list(m->cells[i], m->y);
             if (valid)
                 valid = load_item_list(m->items[i], m->y);
+            if (valid)
+                valid = load_char_list(m->thoughts[i], m->y);
             i++;
         }
     }
@@ -248,25 +305,34 @@ char load_map(struct map *m)
         {
             free(m->cells[i]);
             free(m->items[i]);
+            free(m->thoughts[i]);
             i++;
         }
         free(m->cells);
         free(m->items);
+        free(m->thoughts);
+        free(m->color_sequency);
         m->x = 0;
         m->cells = NULL;
         m->items = NULL;
+        m->thoughts = NULL;
+        m->color_sequency = NULL;
         return 0;
     }
     return check_endline();
 }
 
-char load_map_list(struct map *list, int size)
+char load_map_list(struct zone *zone)
 {
     long i = 0;
-    char valid = 1;
-    while (i < size && valid)
+    char valid = load_int(&(zone->map_number));
+    if (valid)
+        zone->maps = malloc(sizeof(struct map) * zone->map_number);
+    if (zone->maps == NULL)
+        return 0; 
+    while (i < zone->map_number && valid)
     {
-        valid = load_map(list + i);
+        valid = load_map(zone->maps + i);
         i++;
     }
     if (!valid)
@@ -274,11 +340,15 @@ char load_map_list(struct map *list, int size)
         while (i)
         {
             i--;
-            free_map(list[i]);
-            list[i].x = 0;
-            list[i].cells = NULL;
-            list[i].items = NULL;
+            free_map(zone->maps[i]);
+            zone->maps[i].x = 0;
+            zone->maps[i].cells = NULL;
+            zone->maps[i].items = NULL;
+            zone->maps[i].color_sequency = NULL;
+            zone->maps[i].thoughts = NULL;
         }
+        free(zone->maps);
+        zone->maps = NULL;
         return 0;
     }
     return check_endline();
@@ -286,21 +356,35 @@ char load_map_list(struct map *list, int size)
 
 char load_project(struct project *p)
 {
-    char valid = load_int_list(p->parameters, 16);
+    char valid = load_int_list(p->parameters, 12);
     if (!valid)
         return 0;
+    p->zones = malloc(sizeof(struct zone) * p->parameters[11]);
+    if (p->zones == NULL)
+        return 0;
     long i = 0;
+    while (i < p->parameters[11])
+    {
+        p->zones[i].map_number = 0;
+        p->zones[i].maps = NULL;
+        i++;
+    }
     while (i < 5)
     {
-        p->requests[i] = malloc(sizeof(struct request) * p->parameters[i + 10]);
-        p->maps[i] = malloc(sizeof(struct map) * p->parameters[i + 5]);
-        valid = valid && (p->requests[i] != NULL && p->maps[i] != NULL);
+        p->requests[i] = malloc(sizeof(struct request) * p->parameters[i + 5]);
+        valid = valid && (p->requests[i] != NULL);
         i++; 
     }
     if (valid)
     {
-        p->containers = malloc(sizeof(struct container) * p->parameters[15]);
+        p->containers = malloc(sizeof(struct container) * p->parameters[10]);
         valid = p->containers != NULL;
+    }
+    i = 0;
+    while (i < p->parameters[11])
+    {
+
+        i++;
     }
     if (!valid)
     {
@@ -308,30 +392,22 @@ char load_project(struct project *p)
         while (i < 5)
         {
             free(p->requests[i]);
-            free(p->maps[i]);
             i++;
         }
         free(p->containers);
         return 0;
     }
     i = 0;
-    while (i < p->parameters[15])
+    while (i < p->parameters[10])
     {
         p->containers[i].items = NULL;
         i++;
     }
     i = 0;
-    while (i < 5)
+    while (i < p->parameters[11] && valid)
     {
-        int j = 0;
-        while (j < p->parameters[i + 5])
-        {
-            p->maps[i][j].x = 0;
-            p->maps[i][j].cells = NULL;
-            p->maps[i][j].items = NULL;
-            j++;
-        }
-        i++;
+       valid = load_map_list(&(p->zones[i]));
+       i++;
     }
     i = 0;
     struct position pos;
@@ -340,15 +416,13 @@ char load_project(struct project *p)
         valid = load_position(&pos);
         p->character_positions[i] = pos;
         if (valid)
-            valid = load_request_list(p->requests[i], p->parameters[i + 10]);
+            valid = load_request_list(p->requests[i], p->parameters[i + 5]);
         if (valid)
             valid = load_item_list(p->inventories[i], 50);
-        if (valid)
-            valid = load_map_list(p->maps[i], p->parameters[i + 5]);
         i++;
     }
     if (valid)
-        valid = load_container_list(p->containers, p->parameters[15]);
+        valid = load_container_list(p->containers, p->parameters[10]);
     if (!valid)
     {
         free_project(*p);

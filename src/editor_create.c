@@ -24,11 +24,19 @@ void project_create()
     else
     {
         int i = 0;
-        while (i < 16)
+        project_data.zones = malloc(sizeof(struct zone) * 5);
+        if (!project_data.zones)
+        {
+            rect(0,0,1104,704,0,0,0);
+            print_error("Erreur de memoire !");
+            return;
+        }
+        while (i < 11)
         {
             project_data.parameters[i] = 0;
             i++;
         }
+        project_data.parameters[11] = 5;
         i = 0;
         while (i < 5)
         {
@@ -37,7 +45,8 @@ void project_create()
             project_data.character_positions[i].x = 0;
             project_data.character_positions[i].y = 0;
             project_data.requests[i] = NULL;
-            project_data.maps[i] = NULL;
+            project_data.zones[i].maps = NULL;
+            project_data.zones[i].map_number = 0;
             int j = 0;
             while (j < 50)
             {

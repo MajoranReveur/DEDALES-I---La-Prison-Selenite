@@ -13,10 +13,10 @@ void update_camera(int zone, int map)
         x_cursor = 0;
     if (y_cursor < 0)
         y_cursor = 0;
-    if (x_cursor >= project_data.maps[zone][map].x)
-        x_cursor = project_data.maps[zone][map].x - 1;
-    if (y_cursor >= project_data.maps[zone][map].y)
-        y_cursor = project_data.maps[zone][map].y - 1;
+    if (x_cursor >= project_data.zones[zone].maps[map].x)
+        x_cursor = project_data.zones[zone].maps[map].x - 1;
+    if (y_cursor >= project_data.zones[zone].maps[map].y)
+        y_cursor = project_data.zones[zone].maps[map].y - 1;
     if (x_camera > x_cursor)
         x_camera = x_cursor;
     if (x_camera < x_cursor - 10)
@@ -26,14 +26,14 @@ void update_camera(int zone, int map)
     if (y_camera < y_cursor - 10)
         y_camera = y_cursor - 10;
     int i = 1;
-    int a = project_data.maps[zone][map].x;
+    int a = project_data.zones[zone].maps[map].x;
     while (a > 9)
     {
         a /= 10;
         i++;
     }
     int j = 1;
-    int b = project_data.maps[zone][map].y;
+    int b = project_data.zones[zone].maps[map].y;
     while (b > 9)
     {
         b /= 10;
@@ -48,10 +48,10 @@ void update_camera(int zone, int map)
     y_printer[0] = 'Y';
     y_printer[1] = ':';
     int_to_str(x_printer + 2, x_cursor + 1, i);
-    int_to_str(x_printer + i + 3, project_data.maps[zone][map].x, i);
+    int_to_str(x_printer + i + 3, project_data.zones[zone].maps[map].x, i);
     x_printer[i + 2] = '/';
     int_to_str(y_printer + 2, y_cursor + 1, j);
-    int_to_str(y_printer + j + 3, project_data.maps[zone][map].y, j);
+    int_to_str(y_printer + j + 3, project_data.zones[zone].maps[map].y, j);
     y_printer[j + 2] = '/';
 }
 
@@ -96,7 +96,7 @@ int cell_choice(int type)
     return type;
 }
 
-void modify_cell_map(int zone, int map)
+void modify_cell_map(int zone, int *map)
 {
     int type = 0;
     inputs[5] = 0;
@@ -104,13 +104,16 @@ void modify_cell_map(int zone, int map)
     inputs[10] = 0;
     while (!inputs[0] && !inputs[6])
     {
-        display_map_full(x_camera, y_camera, project_data.maps[zone][map], 0);
+        display_map_full(x_camera, y_camera, project_data.zones[zone].maps[*map], 0);
         rect(704, 0, 400, 704, 0, 0, 0);
         print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
-        print_int_centered(704, 50, map + 1, 3, 1, 1, 400);
-        print_text_centered(704, 250, "Backspace : Changer de Type", 1, 1, 400);
-        print_text_centered(704, 300, "Espace : Affecter le Type", 1, 1, 400);
-        print_text_centered(704, 350, "Entree : Retour", 1, 1, 400);
+        print_int_centered(704, 50, *map + 1, 3, 1, 1, 400);
+        print_text_centered(704, 150, "Changer de Type :", 1, 1, 400);
+        print_text_centered(704, 180, get_key_name(9), 1, 6, 400);
+        print_text_centered(704, 210, "Affecter le Type :", 1, 1, 400);
+        print_text_centered(704, 240, get_key_name(4), 1, 6, 400);
+        print_text_centered(704, 270, "Retour :", 1, 1, 400);
+        print_text_centered(704, 300, get_key_name(5), 1, 6, 400);
         print_text_centered(704, 450, "Type actuel :", 1, 1, 400);
         cursor((x_cursor - x_camera) * 64, (y_cursor - y_camera) * 64, 64, 64, 255, 0, 0);
         display_sprite(0, 874, 500, 64, type, 0);
@@ -120,8 +123,8 @@ void modify_cell_map(int zone, int map)
         load_input_long();
         if (inputs[5])
         {
-            if (x_cursor >= 0 && x_cursor < project_data.maps[zone][map].x && y_cursor >= 0 && y_cursor < project_data.maps[zone][map].y)
-                project_data.maps[zone][map].cells[x_cursor][y_cursor] = type;
+            if (x_cursor >= 0 && x_cursor < project_data.zones[zone].maps[*map].x && y_cursor >= 0 && y_cursor < project_data.zones[zone].maps[*map].y)
+                project_data.zones[zone].maps[*map].cells[x_cursor][y_cursor] = type;
         }
         if (inputs[10])
             type = cell_choice(type);
@@ -133,22 +136,26 @@ void modify_cell_map(int zone, int map)
             x_cursor--;
         if (inputs[4])
             x_cursor++;
-        update_camera(zone, map);
+        if (inputs[15] && *map)
+            (*map)--;
+        if (inputs[16] && *map + 1 < project_data.zones[zone].map_number)
+            (*map)++;
+        update_camera(zone, *map);
     }
 }
 
-void modify_item_map(int zone, int map)
+void modify_item_map(int zone, int *map)
 {
     inputs[5] = 0;
     inputs[6] = 0;
     inputs[10] = 0;
     while (!inputs[0] && !inputs[6])
     {
-        display_map_full(x_camera, y_camera, project_data.maps[zone][map], 1);
+        display_map_full(x_camera, y_camera, project_data.zones[zone].maps[*map], 1);
         rect(704, 0, 400, 704, 0, 0, 0);
         print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
-        print_int_centered(704, 50, map + 1, 3, 1, 1, 400);
-        struct item item = project_data.maps[zone][map].items[x_cursor][y_cursor];
+        print_int_centered(704, 50, *map + 1, 3, 1, 1, 400);
+        struct item item = project_data.zones[zone].maps[*map].items[x_cursor][y_cursor];
         print_text_centered(704, 200, "Type :", 1, 1, 400);
         print_text_centered(704, 220, items_texts[item.type], 1, 1, 400);
         int type = item.type;
@@ -235,11 +242,11 @@ void modify_item_map(int zone, int map)
         load_input_long();
         if (inputs[5])
         {
-            if (x_cursor >= 0 && x_cursor < project_data.maps[zone][map].x && y_cursor >= 0 && y_cursor < project_data.maps[zone][map].y)
+            if (x_cursor >= 0 && x_cursor < project_data.zones[zone].maps[*map].x && y_cursor >= 0 && y_cursor < project_data.zones[zone].maps[*map].y)
             {
-                struct position p = {zone + 1, map, x_cursor, y_cursor};
+                struct position p = {zone + 1, *map, x_cursor, y_cursor};
                 modify_item(&item, p, 0);
-                project_data.maps[zone][map].items[x_cursor][y_cursor] = item;
+                project_data.zones[zone].maps[*map].items[x_cursor][y_cursor] = item;
             }
         }
         if (inputs[1])
@@ -250,21 +257,26 @@ void modify_item_map(int zone, int map)
             x_cursor--;
         if (inputs[4])
             x_cursor++;
-        update_camera(zone, map);
+        if (inputs[15] && *map)
+            (*map)--;
+        if (inputs[16] && *map + 1 < project_data.zones[zone].map_number)
+            (*map)++;
+        update_camera(zone, *map);
     }
+    clean_inputs();
 }
 
-void move_cursor(int zone, int map)
+void move_cursor(int zone, int *map)
 {
     inputs[5] = 0;
     inputs[6] = 0;
     inputs[10] = 0;
     while (!inputs[0] && !inputs[5] && !inputs[6])
     {
-        display_map_full(x_camera, y_camera, project_data.maps[zone][map], 0);
+        display_map_full(x_camera, y_camera, project_data.zones[zone].maps[*map], 0);
         rect(704, 0, 400, 704, 0, 0, 0);
         print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
-        print_int_centered(704, 50, map + 1, 3, 1, 1, 400);
+        print_int_centered(704, 50, *map + 1, 3, 1, 1, 400);
         print_text_centered(704, 600, x_printer, 1, 1, 400);
         print_text_centered(704, 630, y_printer, 1, 1, 400);
         cursor((x_cursor - x_camera) * 64, (y_cursor - y_camera) * 64, 64, 64, 255, 0, 0);
@@ -278,64 +290,73 @@ void move_cursor(int zone, int map)
             x_cursor--;
         if (inputs[4])
             x_cursor++;
-        update_camera(zone, map);
+        if (inputs[15] && *map)
+            (*map)--;
+        if (inputs[16] && *map + 1 < project_data.zones[zone].map_number)
+            (*map)++;
+        update_camera(zone, *map);
     }
+    clean_inputs();
 }
 
 void delete_map(int zone, int map)
 {
-    int old_x = project_data.maps[zone][map].x;
-    int old_y = project_data.maps[zone][map].y;
+    int old_x = project_data.zones[zone].maps[map].x;
+    int old_y = project_data.zones[zone].maps[map].y;
     int i = 0;
     while (i < old_x)
     {
         int j = 0;
         while (j < old_y)
         {
-            int type = project_data.maps[zone][map].items[i][j].type;
+            int type = project_data.zones[zone].maps[map].items[i][j].type;
             if (type >= 7 && type <= 13)
-                delete_container(project_data, project_data.maps[zone][map].items[i][j].ID);
+                delete_container(project_data, project_data.zones[zone].maps[map].items[i][j].ID);
             j++;
         }
         i++;
     }
-    free_map(project_data.maps[zone][map]);
+    free_map(project_data.zones[zone].maps[map]);
     //Shift the maps of the same zone
     i = map;
-    while (i + 1 < project_data.parameters[zone + 5])
+    while (i + 1 < project_data.zones[zone].map_number)
     {
-        project_data.maps[zone][i].cells = project_data.maps[zone][i + 1].cells;
-        project_data.maps[zone][i].items = project_data.maps[zone][i + 1].items;
-        project_data.maps[zone][i].x = project_data.maps[zone][i + 1].x;
-        project_data.maps[zone][i].y = project_data.maps[zone][i + 1].y;
+        project_data.zones[zone].maps[i].cells = project_data.zones[zone].maps[i + 1].cells;
+        project_data.zones[zone].maps[i].items = project_data.zones[zone].maps[i + 1].items;
+        project_data.zones[zone].maps[i].thoughts = project_data.zones[zone].maps[i + 1].thoughts;
+        project_data.zones[zone].maps[i].color_length = project_data.zones[zone].maps[i + 1].color_length;
+        project_data.zones[zone].maps[i].color_sequency = project_data.zones[zone].maps[i + 1].color_sequency;
+        project_data.zones[zone].maps[i].initial_delay = project_data.zones[zone].maps[i + 1].initial_delay;
+        project_data.zones[zone].maps[i].x = project_data.zones[zone].maps[i + 1].x;
+        project_data.zones[zone].maps[i].y = project_data.zones[zone].maps[i + 1].y;
         i++;
     }
-    project_data.parameters[zone + 5]--;
+    project_data.zones[zone].map_number--;
     //Try to realloc the total zone maps
-    if (project_data.parameters[zone + 5])
+    if (project_data.zones[zone].map_number)
     {
-        struct map* new_map_list = realloc(project_data.maps[zone], sizeof(struct map) * project_data.parameters[zone + 5]);
+        struct map* new_map_list = realloc(project_data.zones[zone].maps, sizeof(struct map) * project_data.zones[zone].map_number);
         if (new_map_list)
-            project_data.maps[zone] = new_map_list;
+            project_data.zones[zone].maps = new_map_list;
     }
     else
-        project_data.maps[zone] = NULL;
+        project_data.zones[zone].maps = NULL;
     //Delete all items relative to the map
     i = 0;
-    while (i < 5)
+    while (i < project_data.parameters[11])
     {
         int j = 0;
-        while (j < project_data.parameters[i + 5])
+        while (j < project_data.zones[i].map_number)
         {
             int x = 0;
-            while (x < project_data.maps[i][j].x)
+            while (x < project_data.zones[i].maps[j].x)
             {
                 int y = 0;
-                while (y < project_data.maps[i][j].x)
+                while (y < project_data.zones[i].maps[j].x)
                 {
-                    int type = project_data.maps[i][j].items[x][y].type;
-                    int value = project_data.maps[i][j].items[x][y].value;
-                    long ID = project_data.maps[i][j].items[x][y].ID;
+                    int type = project_data.zones[i].maps[j].items[x][y].type;
+                    int value = project_data.zones[i].maps[j].items[x][y].value;
+                    long ID = project_data.zones[i].maps[j].items[x][y].ID;
                     if ((type == 5 && zone == 3) ||
                     (type == 16 && zone == 1) ||
                     (type == 17 && zone == 3) ||
@@ -344,19 +365,19 @@ void delete_map(int zone, int map)
                     )
                     {
                         if (value == map + 1)
-                            project_data.maps[i][j].items[x][y].value = 0;
+                            project_data.zones[i].maps[j].items[x][y].value = 0;
                         if (value > map + 1)
-                            project_data.maps[i][j].items[x][y].value--;
+                            project_data.zones[i].maps[j].items[x][y].value--;
                     }
                     if (type == 6 && value == zone + 1)
                     {
                         if (ID == map + 1)
                         {
-                            project_data.maps[i][j].items[x][y].ID = 0;
-                            project_data.maps[i][j].items[x][y].value = 0;
+                            project_data.zones[i].maps[j].items[x][y].ID = 0;
+                            project_data.zones[i].maps[j].items[x][y].value = 0;
                         }
                         if (ID > map + 1)
-                            project_data.maps[i][j].items[x][y].ID--;
+                            project_data.zones[i].maps[j].items[x][y].ID--;
                     }
                     if ((type == 9 && zone == 1) ||
                     (type == 10 && zone == 2) ||
@@ -383,7 +404,7 @@ void delete_map(int zone, int map)
                             index++;
                         }
                     }
-                    if (type == 7 && (zone == 0 || zone == 4) && project_data.parameters[zone + 5] >= project_data.parameters[5] && project_data.parameters[zone + 5] >= project_data.parameters[9])
+                    if (type == 7 && (zone == 0 || zone == 4) && project_data.zones[zone].map_number >= project_data.parameters[5] && project_data.zones[zone].map_number >= project_data.parameters[9])
                     {
                         int max = project_data.parameters[5];
                         if (max < project_data.parameters[9])
@@ -420,11 +441,11 @@ void change_map_dimensions(int zone, int map)
     print_text_centered(0, 50, project_data.author_name, 1, 1, 1104);
     print_text_centered(0, 100, "- Nouvelles Dimensions -", 1, 1, 1104);
     print_text_centered(0, 170, "Largeur :", 1, 1, 1104);
-    int old_x = project_data.maps[zone][map].x;
+    int old_x = project_data.zones[zone].maps[map].x;
     int x = int_input(old_x, 530, 200);
     // print_int_centered(0, 200, x, 3, 1, 1, 1104);
     print_text_centered(0, 230, "Hauteur :", 1, 1, 1104);
-    int old_y = project_data.maps[zone][map].y;
+    int old_y = project_data.zones[zone].maps[map].y;
     int y = int_input(old_y, 530, 260);
     // print_int_centered(0, 260, y, 3, 1, 1, 1104);
     if (!x || !y)
@@ -434,23 +455,28 @@ void change_map_dimensions(int zone, int map)
     }
     //Allocation of the new map
     int **x_cells = malloc(sizeof(int *) * x);
+    char **x_thoughts = NULL;
     struct item **x_items = NULL;
     if (x_cells != NULL)
         x_items = malloc(sizeof(struct item *) * x);
-    char valid = x_items != NULL;
+    if (x_items != NULL)
+        x_thoughts = malloc(sizeof(char *) * x);
+    char valid = x_thoughts != NULL;
     int i = 0;
-    while (i < x)
+    while (i < x && valid)
     {
         x_cells[i] = NULL;
         x_items[i] = NULL;
+        x_thoughts[i] = NULL;
         i++;
     }
     i = 0;
     while (i < x && valid)
     {
         x_cells[i] = malloc(sizeof(int) * y);
-        x_items[i] = malloc(sizeof(struct item) * y);
-        valid = (x_cells[i] != NULL && x_items[i] != NULL);
+        x_cells[i] = malloc(sizeof(int) * y);
+        x_thoughts[i] = malloc(sizeof(char) * y);
+        valid = (x_cells[i] != NULL && x_items[i] != NULL && x_thoughts[i] != NULL);
         i++;
     }
     while (i && !valid)
@@ -458,11 +484,13 @@ void change_map_dimensions(int zone, int map)
         i--;
         free(x_cells[i]);
         free(x_items[i]);
+        free(x_thoughts[i]);
     }
     if (!valid)
     {
         free(x_cells);
         free(x_items);
+        free(x_thoughts);
         print_error("Pas assez de memoire !");
         return;
     }
@@ -478,6 +506,7 @@ void change_map_dimensions(int zone, int map)
             x_items[i][j].ID = 0;
             x_items[i][j].type = 0;
             x_items[i][j].value = 0;
+            x_thoughts[i][j] = 0;
             j++;
         }
         i++;
@@ -489,11 +518,12 @@ void change_map_dimensions(int zone, int map)
         int j = 0;
         while (j < y && j < old_y)
         {
-            x_cells[i][j] = project_data.maps[zone][map].cells[i][j];
-            x_items[i][j].activation = project_data.maps[zone][map].items[i][j].activation;
-            x_items[i][j].ID = project_data.maps[zone][map].items[i][j].ID;
-            x_items[i][j].type = project_data.maps[zone][map].items[i][j].type;
-            x_items[i][j].value = project_data.maps[zone][map].items[i][j].value;
+            x_cells[i][j] = project_data.zones[zone].maps[map].cells[i][j];
+            x_items[i][j].activation = project_data.zones[zone].maps[map].items[i][j].activation;
+            x_items[i][j].ID = project_data.zones[zone].maps[map].items[i][j].ID;
+            x_items[i][j].type = project_data.zones[zone].maps[map].items[i][j].type;
+            x_items[i][j].value = project_data.zones[zone].maps[map].items[i][j].value;
+            x_thoughts[i][j] = project_data.zones[zone].maps[map].thoughts[i][j];
             j++;
         }
         i++;
@@ -505,19 +535,20 @@ void change_map_dimensions(int zone, int map)
         int j = y;
         while (j < old_y)
         {
-            int type = project_data.maps[zone][map].items[i][j].type;
+            int type = project_data.zones[zone].maps[map].items[i][j].type;
             if (type >= 7 && type <= 13)
-                delete_container(project_data, project_data.maps[zone][map].items[i][j].ID);
+                delete_container(project_data, project_data.zones[zone].maps[map].items[i][j].ID);
             j++;
         }
         i++;
     }
     //Delete the old map
-    free_map(project_data.maps[zone][map]);
-    project_data.maps[zone][map].cells = x_cells;
-    project_data.maps[zone][map].items = x_items;
-    project_data.maps[zone][map].x = x;
-    project_data.maps[zone][map].y = y;
+    free_map(project_data.zones[zone].maps[map]);
+    project_data.zones[zone].maps[map].cells = x_cells;
+    project_data.zones[zone].maps[map].items = x_items;
+    project_data.zones[zone].maps[map].thoughts = x_thoughts;
+    project_data.zones[zone].maps[map].x = x;
+    project_data.zones[zone].maps[map].y = y;
     print_error("Carte modifiee !");
 }
 
@@ -529,9 +560,9 @@ void modify_map(int zone, int map)
     while (!inputs[0] && !quit)
     {
         inputs[5] = 0;
-        while (!inputs[0] && !inputs[5])
+        while (!inputs[0] && !inputs[5] && !inputs[6] && !inputs[15] && !inputs[16])
         {
-            display_map_full(x_camera, y_camera, project_data.maps[zone][map], 1);
+            display_map_full(x_camera, y_camera, project_data.zones[zone].maps[map], 1);
             rect(704, 0, 400, 704, 0, 0, 0);
             print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
             print_int_centered(704, 50, map + 1, 3, 1, 1, 400);
@@ -550,16 +581,16 @@ void modify_map(int zone, int map)
             if (inputs[2])
                 i = (i + 1) % 6;
         }
-        if (!inputs[0])
+        if (inputs[5])
         {
             if (i == 5)
                 quit = 1;
             if (i == 0)
-                modify_cell_map(zone, map);
+                modify_cell_map(zone, &map);
             if (i == 1)
-                modify_item_map(zone, map);
+                modify_item_map(zone, &map);
             if (i == 4)
-                move_cursor(zone, map);
+                move_cursor(zone, &map);
             if (i == 2)
             {
                 change_map_dimensions(zone, map);
@@ -571,12 +602,21 @@ void modify_map(int zone, int map)
                 quit = 1;
             }
         }
+        if (inputs[6])
+            quit = 1;
+        if (inputs[15] && map)
+            map--;
+        if (inputs[16] && map + 1 < project_data.zones[zone].map_number)
+            map++;
+        if (inputs[15] || inputs[16])
+            update_camera(zone, map);
+        clean_inputs();
     }
 }
 
 char create_map(int zone)
 {
-    if (project_data.parameters[5 + zone] >= 99)
+    if (project_data.zones[zone].map_number >= 99)
     {
         print_error("99 Cartes ont deja ete creees !");
         return 0;
@@ -598,14 +638,18 @@ char create_map(int zone)
     }
     int **x_cells = malloc(sizeof(int *) * x);
     struct item **x_items = NULL;
+    char **x_thoughts = NULL;
     if (x_cells != NULL)
         x_items = malloc(sizeof(struct item *) * x);
-    char valid = x_items != NULL;
+    if (x_items != NULL)
+        x_thoughts = malloc(sizeof(char *) * x);
+    char valid = x_thoughts != NULL;
     int i = 0;
-    while (i < x)
+    while (i < x && valid)
     {
         x_cells[i] = NULL;
         x_items[i] = NULL;
+        x_thoughts[i] = NULL;
         i++;
     }
     i = 0;
@@ -613,23 +657,26 @@ char create_map(int zone)
     {
         x_cells[i] = malloc(sizeof(int) * y);
         x_items[i] = malloc(sizeof(struct item) * y);
-        valid = (x_cells[i] != NULL && x_items[i] != NULL);
+        x_thoughts[i] = malloc(sizeof(char) * y);
+        valid = (x_cells[i] != NULL && x_items[i] != NULL && x_thoughts[i] != NULL);
         i++;
     }
     struct map *new_map_list = NULL;
     if (valid)
-        new_map_list = realloc(project_data.maps[zone], sizeof(struct map) * (project_data.parameters[zone + 5] + 1));
+        new_map_list = realloc(project_data.zones[zone].maps, sizeof(struct map) * (project_data.zones[zone].map_number + 1));
     valid = new_map_list != NULL;
     while (i && !valid)
     {
         i--;
         free(x_cells[i]);
         free(x_items[i]);
+        free(x_thoughts[i]);
     }
     if (!valid)
     {
         free(x_cells);
         free(x_items);
+        free(x_thoughts);
         print_error("Pas assez de memoire !");
         return 0;
     }
@@ -645,16 +692,21 @@ char create_map(int zone)
             x_items[i][j].ID = 0;
             x_items[i][j].type = 0;
             x_items[i][j].value = 0;
+            x_thoughts[i][j] = 0;
             j++;
         }
         i++;
     }
-    new_map_list[project_data.parameters[5 + zone]].cells = x_cells;
-    new_map_list[project_data.parameters[5 + zone]].items = x_items;
-    new_map_list[project_data.parameters[5 + zone]].x = x;
-    new_map_list[project_data.parameters[5 + zone]].y = y;
-    project_data.parameters[5 + zone]++;
-    project_data.maps[zone] = new_map_list;
+    new_map_list[project_data.zones[zone].map_number].thoughts = x_thoughts;
+    new_map_list[project_data.zones[zone].map_number].cells = x_cells;
+    new_map_list[project_data.zones[zone].map_number].items = x_items;
+    new_map_list[project_data.zones[zone].map_number].x = x;
+    new_map_list[project_data.zones[zone].map_number].y = y;
+    new_map_list[project_data.zones[zone].map_number].initial_delay = 0;
+    new_map_list[project_data.zones[zone].map_number].color_length = 0;
+    new_map_list[project_data.zones[zone].map_number].color_sequency = NULL;
+    project_data.zones[zone].map_number++;
+    project_data.zones[zone].maps = new_map_list;
     print_error("Carte creee !");
     return 1;
 }

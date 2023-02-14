@@ -3,6 +3,7 @@
 void free_container(struct container c)
 {
     free(c.items);
+    c.items = NULL;
 }
 
 void free_map(struct map r)
@@ -12,10 +13,24 @@ void free_map(struct map r)
     {
         free(r.cells[i]);
         free(r.items[i]);
+        free(r.thoughts[i]);
         i++;
     }
     free(r.cells);
     free(r.items);
+    free(r.thoughts);
+    free(r.color_sequency);
+}
+
+void free_zone(struct zone z)
+{
+    int i = 0;
+    while (i < z.map_number && z.maps != NULL)
+    {
+        free_map(z.maps[i]);
+        i++;
+    }
+    free(z.maps);
 }
 
 void free_project(struct project p)
@@ -24,17 +39,17 @@ void free_project(struct project p)
     while (i < 5)
     {
         free(p.requests[i]);
-        int j = 0;
-        while (j < p.parameters[i + 5])
-        {
-            free_map(p.maps[i][j]);
-            j++;
-        }
-        free(p.maps[i]);
         i++;
     }
     i = 0;
-    while (i < p.parameters[15])
+    while (i < p.parameters[11])
+    {
+        free_zone(p.zones[i]);
+        i++;
+    }
+    free(p.zones);
+    i = 0;
+    while (i < p.parameters[10])
     {
         free_container(p.containers[i]);
         i++;
@@ -45,17 +60,17 @@ void free_project(struct project p)
 
 void delete_container(struct project p, long ID)
 {
-    free(p.containers[ID].items);
-    p.containers[ID] = p.containers[p.parameters[15] - 1];
-    p.parameters[15]--;
+    free_container(p.containers[ID]);
+    p.containers[ID] = p.containers[p.parameters[10] - 1];
+    p.parameters[10]--;
     struct position last_container = p.containers[ID].position;
     if (last_container.zone == 0) // Inventory
         p.inventories[last_container.map][last_container.x].ID = ID;
     else
-        p.maps[last_container.zone - 1][last_container.map].items[last_container.x][last_container.y].ID = ID;
-    if (p.parameters[15])
+        p.zones[last_container.zone - 1].maps[last_container.map].items[last_container.x][last_container.y].ID = ID;
+    if (p.parameters[10])
     {
-        struct container *new_list = realloc(p.containers, sizeof(struct container) * p.parameters[15]);
+        struct container *new_list = realloc(p.containers, sizeof(struct container) * p.parameters[10]);
         if (new_list)
             p.containers = new_list; // In case of fail, the memory just won't be free
     }

@@ -50,37 +50,43 @@ Project parameters :
 2 - Oubliettes Luminosity
 3 - Maximal Luminosity
 4 - Initial Character
-5 - Number of maps of the Entrepot
-6 - Number of maps of the Keys
-7 - Number of maps of the Nightmares
-8 - Number of maps of the Dreams
-9 - Number of maps of the Oubliettes
-10 - Number of requests from Nihil
-11 - Number of requests from Sarah
-12 - Number of requests from Emma
-13 - Number of requests from Mathias
-14 - Number of requests from Saihtam
-15 - Number of containers items
+5 - Number of requests from Nihil
+6 - Number of requests from Sarah
+7 - Number of requests from Emma
+8 - Number of requests from Mathias
+9 - Number of requests from Saihtam
+10 - Number of containers items
+11 - Number of zones (cannot be less than 5)
 */
 
 struct map
 {
     int x;
     int y;
+    int initial_delay;
+    int color_length; //Length of color_sequency
+    int* color_sequency;
     int** cells;
+    char** thoughts;
     struct item **items;
+};
+
+struct zone
+{
+    int map_number;
+    struct map *maps;
 };
 
 struct project
 {
     char* project_name;
     char* author_name;
-	int parameters[16];
+	int parameters[12];
     struct position character_positions[5]; //First positions of each character
 	struct request *requests[5]; //Requests for each of the 5 characters
     struct item inventories[50][5]; //Inventories for each of the 5 characters
     struct container *containers; //Content of items which have other items inside
-	struct map *maps[5]; //Maps of the 5 zones
+	struct zone *zones; //Different zones
 	char modified; //True if the project has been modified since the last save
     char valid; //True if the project was valid at the last analysis
 };
