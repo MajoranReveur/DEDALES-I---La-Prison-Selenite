@@ -8,7 +8,7 @@ struct project project_data;
 
 struct position
 {
-    int zone; //0 : In an inventory
+    int zone; //0 : In an inventory/Undefined
     int map;
     int x;
     int y;

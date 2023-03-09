@@ -396,9 +396,10 @@ void edit_content_level(long ID, int type)
     inputs[5] = 0;
     inputs[6] = 0;
     inputs[10] = 0;
-    char count_by_category[4] = {'x', 0, 0, 0};
-    char string_capacity[4] = {0};
-    char string_count[4] = {0};
+    char count_by_category[21] = {0};
+    count_by_category[0] = 'x';
+    char string_capacity[20] = {0};
+    char string_count[20] = {0};
     char string_total_capacity[8] = {0};
     int i = 0;
     int camera = 0;
@@ -727,4 +728,5 @@ void modify_item(struct item *item, struct position p, char mode) // Mode 0 : cr
             item->value = value;
         }
     }
+    clean_inputs();
 }

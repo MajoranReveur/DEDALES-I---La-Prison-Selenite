@@ -12,7 +12,6 @@ extern char file_loaded;
 extern char file_saved; 
 
 extern char** main_menu_texts;
-
 int main(int argc, char** argv)
 {
 	software_mode = 0;
