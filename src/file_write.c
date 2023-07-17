@@ -39,6 +39,7 @@ void write_position(struct position p)
     write_int(p.map);
     write_int(p.x);
     write_int(p.y);
+    write_int(p.orientation);
     fputc('\n', file);
 }
 
@@ -111,6 +112,8 @@ void write_map(struct map m)
 {
     write_int(m.x);
     write_int(m.y);
+    write_int(m.x_start);
+    write_int(m.y_start);
     write_int(m.initial_delay);
     write_int(m.color_length);
     if (m.color_length)
@@ -160,7 +163,7 @@ void write_project(struct project p)
 
 char save_project(struct project p)
 {
-    char* file_fields[5] = {
+    const char* file_fields[5] = {
         "levels/projects/",
         p.project_name,
         "[",
@@ -182,6 +185,35 @@ char save_project(struct project p)
     write_project(p);
     file_saved = 1;
     print_error("Projet sauvegarde !");
+    fclose(file);
+    file = NULL;
+    return 1;
+}
+
+char export_project(struct project p)
+{
+    const char* file_fields[5] = {
+        "levels/games/",
+        p.project_name,
+        "[",
+        p.author_name,
+        "].txt"
+    };
+    char filename[451] = { 0 };
+    concat_str(filename, file_fields, 450, 5);
+    file = fopen(filename, "w");
+    if (!file)
+    {
+        print_error("Echec...");
+        print_error("    Sources possibles d'erreur :    ");
+        print_error("      - Nom du projet invalide      ");
+        print_error("         - Pseudo invalide          ");
+        print_error("- Dossier levels/games inexistant");
+        return 0;
+    }
+    write_project(p);
+    file_saved = 1;
+    print_error("Projet exporte !");
     fclose(file);
     file = NULL;
     return 1;

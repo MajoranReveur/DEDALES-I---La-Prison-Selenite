@@ -1,6 +1,6 @@
-#include "editor_load.h"
+#include "game_load.h"
 
-void project_load()
+void game_load()
 {
     char *title = NULL;
     char *author = NULL;
@@ -13,7 +13,7 @@ void project_load()
             project_data.project_name = title;
             if (open_project(&project_data))
             {
-                project_menu();
+                launch_game();
                 done = 1;
                 free_project(project_data);
             }

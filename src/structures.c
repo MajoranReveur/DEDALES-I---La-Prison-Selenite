@@ -58,27 +58,31 @@ void free_project(struct project p)
     file_loaded = 0;
 }
 
-void delete_container(struct project p, long ID)
+void delete_container(long ID)
 {
-    free_container(p.containers[ID]);
-    p.containers[ID] = p.containers[p.parameters[10] - 1];
-    p.parameters[10]--;
-    struct position last_container = p.containers[ID].position;
+    //print_error("Trying to delete container");
+    //print_error_int(project_data.parameters[10]);
+    free_container(project_data.containers[ID]);
+    project_data.containers[ID] = project_data.containers[project_data.parameters[10] - 1];
+    project_data.parameters[10]--;
+    struct position last_container = project_data.containers[ID].position;
     if (last_container.zone == 0) // Inventory
-        p.inventories[last_container.map][last_container.x].ID = ID;
+        project_data.inventories[last_container.map][last_container.x].ID = ID;
     else
-        p.zones[last_container.zone - 1].maps[last_container.map].items[last_container.x][last_container.y].ID = ID;
-    if (p.parameters[10])
+        project_data.zones[last_container.zone - 1].maps[last_container.map].items[last_container.x][last_container.y].ID = ID;
+    if (project_data.parameters[10])
     {
-        struct container *new_list = realloc(p.containers, sizeof(struct container) * p.parameters[10]);
+        //print_error_int(project_data.parameters[10]);
+        struct container *new_list = realloc(project_data.containers, sizeof(struct container) * project_data.parameters[10]);
         if (new_list)
-            p.containers = new_list; // In case of fail, the memory just won't be free
+            project_data.containers = new_list; // In case of fail, the memory just won't be free
     }
     else
     {
-        free(p.containers);
-        p.containers = NULL;
+        free(project_data.containers);
+        project_data.containers = NULL;
     }
+    //print_error("Delete succeeded");
 }
 
 void add_item(struct container container, int value, int type)

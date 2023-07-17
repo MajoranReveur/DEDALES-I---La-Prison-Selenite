@@ -17,14 +17,14 @@ void update_camera(int zone, int map)
         x_cursor = project_data.zones[zone].maps[map].x - 1;
     if (y_cursor >= project_data.zones[zone].maps[map].y)
         y_cursor = project_data.zones[zone].maps[map].y - 1;
-    if (x_camera > x_cursor)
-        x_camera = x_cursor;
-    if (x_camera < x_cursor - 10)
-        x_camera = x_cursor - 10;
-    if (y_camera > y_cursor)
-        y_camera = y_cursor;
-    if (y_camera < y_cursor - 10)
-        y_camera = y_cursor - 10;
+    if (x_camera + 1 > x_cursor)
+        x_camera = x_cursor - 1;
+    if (x_camera < x_cursor - 9)
+        x_camera = x_cursor - 9;
+    if (y_camera + 1 > y_cursor)
+        y_camera = y_cursor - 1;
+    if (y_camera < y_cursor - 9)
+        y_camera = y_cursor - 9;
     int i = 1;
     int a = project_data.zones[zone].maps[map].x;
     while (a > 9)
@@ -104,7 +104,7 @@ void modify_cell_map(int zone, int *map)
     inputs[10] = 0;
     while (!inputs[0] && !inputs[6])
     {
-        display_map_full(x_camera, y_camera, project_data.zones[zone].maps[*map], 0);
+        display_map_cells(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
         rect(704, 0, 400, 704, 0, 0, 0);
         print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
         print_int_centered(704, 50, *map + 1, 3, 1, 1, 400);
@@ -149,7 +149,8 @@ void modify_item_map(int zone, int *map)
     clean_inputs();
     while (!inputs[0] && !inputs[6])
     {
-        display_map_full(x_camera, y_camera, project_data.zones[zone].maps[*map], 1);
+        display_map_cells(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
+        display_map_items(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
         rect(704, 0, 400, 704, 0, 0, 0);
         print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
         print_int_centered(704, 50, *map + 1, 3, 1, 1, 400);
@@ -206,7 +207,7 @@ void modify_item_map(int zone, int *map)
             }
             int_to_str(capacity, size, 1);
             int_to_str(content, count, 1);
-            char* fields[3] = {content, "/", capacity};
+            const char* fields[3] = {content, "/", capacity};
             char capacity_output[8] = {0};
             concat_str(capacity_output, fields, 8, 3);
             print_text_centered(704, 305 + j * 70, capacity_output, 1, 6, 400);
@@ -271,7 +272,7 @@ void move_cursor(int zone, int *map)
     inputs[10] = 0;
     while (!inputs[0] && !inputs[5] && !inputs[6])
     {
-        display_map_full(x_camera, y_camera, project_data.zones[zone].maps[*map], 0);
+        display_map_cells(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
         rect(704, 0, 400, 704, 0, 0, 0);
         print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
         print_int_centered(704, 50, *map + 1, 3, 1, 1, 400);
@@ -297,6 +298,55 @@ void move_cursor(int zone, int *map)
     clean_inputs();
 }
 
+void change_start(int zone, int* map)
+{
+    x_cursor = project_data.zones[zone].maps[*map].x_start;
+    y_cursor = project_data.zones[zone].maps[*map].y_start;
+    update_camera(zone, *map);
+    inputs[5] = 0;
+    inputs[6] = 0;
+    inputs[10] = 0;
+    while (!inputs[0] && !inputs[5] && !inputs[6])
+    {
+        display_map_cells(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
+        rect(704, 0, 400, 704, 0, 0, 0);
+        print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
+        print_int_centered(704, 50, *map + 1, 3, 1, 1, 400);
+        print_text_centered(704, 600, x_printer, 1, 1, 400);
+        print_text_centered(704, 630, y_printer, 1, 1, 400);
+        cursor((x_cursor - x_camera) * 64, (y_cursor - y_camera) * 64, 64, 64, 255, 0, 0);
+        print_refresh();
+        load_input_long();
+        if (inputs[1])
+            y_cursor--;
+        if (inputs[2])
+            y_cursor++;
+        if (inputs[3])
+            x_cursor--;
+        if (inputs[4])
+            x_cursor++;
+        if (inputs[15] && *map)
+        {
+            (*map)--;
+            x_cursor = project_data.zones[zone].maps[*map].x_start;
+            y_cursor = project_data.zones[zone].maps[*map].y_start;
+        }
+        if (inputs[16] && *map + 1 < project_data.zones[zone].map_number)
+        {
+            (*map)++;
+            x_cursor = project_data.zones[zone].maps[*map].x_start;
+            y_cursor = project_data.zones[zone].maps[*map].y_start;
+        }
+        update_camera(zone, *map);
+    }
+    if (inputs[5])
+    {
+        project_data.zones[zone].maps[*map].x_start = x_cursor;
+        project_data.zones[zone].maps[*map].y_start = y_cursor;
+    }
+    clean_inputs();
+}
+
 char position_choice_cell(int zone, int *map, struct position *p)
 {
     inputs[5] = 0;
@@ -311,7 +361,8 @@ char position_choice_cell(int zone, int *map, struct position *p)
     clean_inputs();
     while (!inputs[0] && !inputs[5] && !inputs[6])
     {
-        display_map_full(x_camera, y_camera, project_data.zones[zone].maps[*map], 1);
+        display_map_cells(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
+        display_map_items(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
         rect(704, 0, 400, 704, 0, 0, 0);
         print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
         print_int_centered(704, 50, *map + 1, 3, 1, 1, 400);
@@ -359,7 +410,7 @@ void delete_map(int zone, int map)
         {
             int type = project_data.zones[zone].maps[map].items[i][j].type;
             if (type >= 7 && type <= 13)
-                delete_container(project_data, project_data.zones[zone].maps[map].items[i][j].ID);
+                delete_container(project_data.zones[zone].maps[map].items[i][j].ID);
             j++;
         }
         i++;
@@ -509,7 +560,7 @@ void change_map_dimensions(int zone, int map)
     char y_string[20] = {0};
     int_to_str(x_string, old_x, 0);
     int_to_str(y_string, old_y, 0);
-    char* dimensions_strings[4] = {"Dimensions : ", x_string, "x", y_string};
+    const char* dimensions_strings[4] = {"Dimensions : ", x_string, "x", y_string};
     char dimensions_string[50] = {0};
     concat_str(dimensions_string, dimensions_strings, 50, 4);
     print_text_centered(0, 150, dimensions_string, 1, 1, 1104);
@@ -618,7 +669,7 @@ void change_map_dimensions(int zone, int map)
         {
             int type = project_data.zones[zone].maps[map].items[i][j].type;
             if (type >= 7 && type <= 13)
-                delete_container(project_data, project_data.zones[zone].maps[map].items[i][j].ID);
+                delete_container(project_data.zones[zone].maps[map].items[i][j].ID);
             j++;
         }
         i++;
@@ -636,14 +687,15 @@ void change_map_dimensions(int zone, int map)
 void modify_map(int zone, int map)
 {
     char quit = 0;
+    clean_inputs();
     update_camera(zone, map);
     int i = 0;
     while (!inputs[0] && !quit)
     {
-        inputs[5] = 0;
         while (!inputs[0] && !inputs[5] && !inputs[6] && !inputs[15] && !inputs[16])
         {
-            display_map_full(x_camera, y_camera, project_data.zones[zone].maps[map], 1);
+            display_map_cells(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[map]);
+            display_map_items(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[map]);
             rect(704, 0, 400, 704, 0, 0, 0);
             print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
             print_int_centered(704, 50, map + 1, 3, 1, 1, 400);
@@ -652,19 +704,32 @@ void modify_map(int zone, int map)
             print_text_centered(704, 350, "Redimensionner", 1, 1 + (i == 2), 400);
             print_text_centered(704, 400, "Supprimer la Carte", 1, 1 + (i == 3), 400);
             print_text_centered(704, 450, "Deplacer le Curseur", 1, 1 + (i == 4), 400);
-            print_text_centered(704, 500, "Retour", 1, 1 + (i == 5), 400);
+            if (zone > 0 && zone != 4)
+            {
+                print_text_centered(704, 500, "Changer le Depart", 1, 1 + (i == 5), 400);
+                print_text_centered(704, 550, "Retour", 1, 1 + (i == 6), 400);
+            }
+            else
+                print_text_centered(704, 500, "Retour", 1, 1 + (i == 5), 400);
             print_text_centered(704, 600, x_printer, 1, 1, 400);
             print_text_centered(704, 630, y_printer, 1, 1, 400);
             print_refresh();
             load_input_long();
             if (inputs[1])
-                i = (i + 5) % 6;
+                i = (i + 5 + (zone > 0 && zone != 4)) % (6 + (zone > 0 && zone != 4));
             if (inputs[2])
-                i = (i + 1) % 6;
+                i = (i + 1) % (6 + (zone > 0 && zone != 4));
         }
         if (inputs[5])
         {
             if (i == 5)
+            {
+                if (zone > 0 && zone != 4)
+                    change_start(zone, &map);
+                else
+                    quit = 1;
+            }
+            if (i == 6)
                 quit = 1;
             if (i == 0)
                 modify_cell_map(zone, &map);
@@ -682,6 +747,7 @@ void modify_map(int zone, int map)
                 delete_map(zone, map);
                 quit = 1;
             }
+            clean_inputs();
         }
         if (inputs[6])
             quit = 1;
@@ -704,7 +770,7 @@ char create_map(int zone)
     }
     rect(0, 0, 1104, 704, 0, 0, 0);
     char controls_string[100] = {0};
-    char* controls_strings[4] = {"Changer le chiffre : ", get_key_name(0), ", ", get_key_name(1)};
+    const char* controls_strings[4] = {"Changer le chiffre : ", get_key_name(0), ", ", get_key_name(1)};
     concat_str(controls_string, controls_strings, 100, 4);
     print_text_centered(0, 610, controls_string, 1, 6, 1104);
     controls_strings[0] = "Changer de chiffre : ";
@@ -720,7 +786,7 @@ char create_map(int zone)
     print_text_centered(0, 670, controls_string, 1, 6, 1104);
     char x_string[20] = {0};
     char y_string[20] = {0};
-    char* dimensions_strings[4] = {"Dimensions : ", "...", "x", "..."};
+    const char* dimensions_strings[4] = {"Dimensions : ", "...", "x", "..."};
     char dimensions_string[50] = {0};
     concat_str(dimensions_string, dimensions_strings, 50, 4);
     print_text_centered(0, 10, project_data.project_name, 0, 1, 1104);

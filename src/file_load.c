@@ -92,6 +92,9 @@ char load_position(struct position *p)
     if (!load_int(&value))
         return 0;
     p->y = value;
+    if (!load_int(&value))
+        return 0;
+    p->orientation = value;
     return check_endline();
 }
 
@@ -233,6 +236,12 @@ char load_map(struct map *m)
     if (!load_int(&value))
         return 0;
     m->y = value;
+    if (!load_int(&value))
+        return 0;
+    m->x_start = value;
+    if (!load_int(&value))
+        return 0;
+    m->y_start = value;
     if (!load_int(&value))
         return 0;
     m->initial_delay = value;
@@ -433,7 +442,7 @@ char load_project(struct project *p)
 
 char open_project(struct project *p)
 {
-    char* file_fields[5] = {
+    const char* file_fields[5] = {
         "levels/projects/",
         p->project_name,
         "[",
@@ -460,6 +469,7 @@ char open_project(struct project *p)
         file_loaded = 1;
         file_saved = 1;
         print_error("Projet charge !");
+        print_error_int(p->parameters[10]);
         return 1;
     }
     print_error("Mauvais format...");

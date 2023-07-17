@@ -167,13 +167,14 @@ void print_int_centered(int x, int y, long long value, int to_fill, int size, in
 
 void print_error(const char* text)
 {
+	int screen_size = 1104 - 400 * software_mode;
 	SDL_Surface* surface = TTF_RenderText_Solid(police[1], text, text_colors[2]);
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 	int w = 0;
 	int h = 0;
 	SDL_QueryTexture(texture, NULL, NULL, &w, &h);
 	SDL_Rect dest = { 0,300,w,h };
-	dest.x = (1104 - dest.w) / 2;
+	dest.x = (screen_size - dest.w) / 2;
 	rect(dest.x - 10, dest.y - 10, dest.w + 20, dest.h + 20, 255, 0, 0);
 	rect(dest.x - 5, dest.y - 5, dest.w + 10, dest.h + 10, 0, 0, 0);
 	SDL_RenderCopy(renderer, texture, NULL, &dest);
@@ -208,7 +209,6 @@ void rect_alpha(int x, int y, int w, int h, int r, int g, int b, int alpha)
 	SDL_SetRenderDrawColor(renderer, r, g, b, alpha);
 	SDL_RenderFillRect(renderer, &rect);
 }
-
 
 void display_sprite(int type, int x, int y, int size, int column, int line)
 {
@@ -266,7 +266,6 @@ void display_minimap_full(int x, int y, struct map map)
 	}
 }
 
-
 void cursor(int x, int y, int w, int h, int r, int g, int b)
 {
 	rect(x + 4, y, w - 8, 8, r, g, b);
@@ -275,98 +274,18 @@ void cursor(int x, int y, int w, int h, int r, int g, int b)
 	rect(x + w - 8, y + 4, 8, h - 8, r, g, b);
 }
 
-void display_map(int x, int y, int* map, int visibility, char* savemap, int* items, int* item_values, int* visible, int* requests)
+void display_map_cells(int x, int y, struct map map)
 {
-	//visibility = 50;
-	rect(0, 0, 704, 704, 0, 0, 0);
-	int a = x % 8;
-	int b = y % 8;
-	x /= 8;
-	y /= 8;
-	int i = 0;
-	while (i <= 11)
-	{
-		int j = 0;
-		while (j <= 11)
-		{
-			int dx = i - (a > 4) - 5;
-			int dy = j - (b > 4) - 5;
-			if (dx < 0)
-				dx = -dx;
-			if (dy < 0)
-				dy = -dy;
-			char insums = (x - 5 + i >= 0 && x - 5 + i < *map);
-			char incolumns = (y - 5 + j >= 0 && y - 5 + j < map[1]);
-			size_t targetsave = *map * (y - 5 + j) + x - 5 + i;
-			size_t target = 2 + targetsave;
-			if (insums && incolumns && savemap[1 + targetsave] && dx + dy < visibility) //  && && savemap[targetsave]
-			{
-				char top = 0;
-				char topleft = 0;
-				char topright = 0;
-				char left = 0;
-				char right = 0;
-				char downleft = 0;
-				char downright = 0;
-				char down = 0;
-				if (targetsave >= map[0])
-				{
-					top = map[target - map[0]] == map[target];
-					if (targetsave % map[0] != 0)
-						topleft = map[target - 1 - map[0]] == map[target];
-					if (targetsave % map[0] != map[0] - 1)
-						topright = map[target + 1 - map[0]] == map[target];
-				}
-				if (targetsave < map[0] * (map[1] - 1))
-				{
-					down = map[target + map[0]] == map[target];
-					if (targetsave % map[0] != 0)
-						downleft = map[target - 1 + map[0]] == map[target];
-					if (targetsave % map[0] != map[0] - 1)
-						downright = map[target + 1 + map[0]] == map[target];
-				}
-				if (targetsave % map[0] != 0)
-					left = map[target - 1] == map[target];
-				if (targetsave % map[0] != map[0] - 1)
-					right = map[target + 1] == map[target];
-				int printx = i * 64 - a * 8;
-				int printy = j * 64 - b * 8;
-				display_sprite(0, printx, printy, 32, map[target] * 2, angle_type(top, left, topleft) * 2);
-				display_sprite(0, printx + 32, printy, 32, map[target] * 2 + 1, angle_type(top, right, topright) * 2);
-				display_sprite(0, printx, printy + 32, 32, map[target] * 2, angle_type(down, left, downleft) * 2 + 1);
-				display_sprite(0, printx + 32, printy + 32, 32, map[target] * 2 + 1, angle_type(down, right, downright) * 2 + 1);
-				/*if (y - 5 + j == 0 || map[target - *map] == 2)
-					display_tilesprite(printx, printy - 64, 2);*/
-				if (items[targetsave])
-				{
-					char printable = 1;
-					if (item_values[3 * (items[targetsave] - 1)] == 3 && !visible[0])
-						printable = 0;
-					if (item_values[3 * (items[targetsave] - 1)] == 16 && !visible[1])
-						printable = 0;
-					if (printable)
-						display_sprite(3, printx, printy, 64, item_values[3 * (items[targetsave] - 1)] - 1, frame / 2);
-				}
-				if (savemap[1 + targetsave] == 1)
-					rect_alpha(printx, printy, 64, 64, 0, 0, 0, 150);
-			}
-			else
-				rect(i * 64 - a * 8, j * 64 - b * 8, 64, 64, 0, 0, 0);
-			j++;
-		}
-		i++;
-	}
-}
-
-
-void display_map_full(int x, int y, struct map map, char print_item)
-{
+	int dx = x % 8;
+	int dy = y % 8;
+	x = (x - dx) / 8;
+	y = (y - dy) / 8;
 	rect(0, 0, 704, 704, 0, 0, 0);
 	int i = 0;
-	while (i < 11 && x + i < map.x)
+	while (i < 12 && x + i < map.x)
 	{
 		int j = 0;
-		while (j < 11 && y + j < map.y)
+		while (j < 12 && y + j < map.y)
 		{
 			if (x + i >= 0 && y + j >= 0)
 			{
@@ -400,18 +319,89 @@ void display_map_full(int x, int y, struct map map, char print_item)
 					left = map.cells[a-1][b] == map.cells[a][b];
 				if (a < map.x - 1)
 					right = map.cells[a+1][b] == map.cells[a][b];
-				int print_x = i * 64;
-				int print_y = j * 64;
+				int print_x = i * 64 - dx * 8;
+				int print_y = j * 64 - dy * 8;
 				display_sprite(0, print_x, print_y, 32, map.cells[a][b] * 2, angle_type(top, left, topleft) * 2);
 				display_sprite(0, print_x + 32, print_y, 32, map.cells[a][b] * 2 + 1, angle_type(top, right, topright) * 2);
 				display_sprite(0, print_x, print_y + 32, 32, map.cells[a][b] * 2, angle_type(down, left, downleft) * 2 + 1);
 				display_sprite(0, print_x + 32, print_y + 32, 32, map.cells[a][b] * 2 + 1, angle_type(down, right, downright) * 2 + 1);
-				if (map.items[a][b].type && print_item)
+			}
+			j++;
+		}
+		i++;
+	}
+}
+
+void display_map_items(int x, int y, struct map map)
+{
+	int dx = x % 8;
+	int dy = y % 8;
+	x = (x - dx) / 8;
+	y = (y - dy) / 8;
+	int i = 0;
+	while (i < 12 && x + i < map.x)
+	{
+		int j = 0;
+		while (j < 12 && y + j < map.y)
+		{
+			if (x + i >= 0 && y + j >= 0)
+			{
+				int a = x + i;
+				int b = y + j;
+				int print_x = i * 64 - dx * 8;
+				int print_y = j * 64 - dy * 8;
+				if (map.items[a][b].type)
 					display_sprite(3, print_x, print_y, 64, map.items[a][b].type - 1, 0);
 			}
 			j++;
 		}
 		i++;
+	}
+}
+
+void display_map_characters(int x, int y, int map, int zone)
+{
+	int i = 0;
+	print_int(0, 0, project_data.character_positions[0].zone, 0, 1, 2);
+	print_int(0, 50, zone, 0, 1, 2);
+	while (i < 5)
+	{
+		if (project_data.character_positions[i].zone == zone)
+		{
+			if (project_data.character_positions[i].map == map)
+				display_sprite(4, (project_data.character_positions[i].x - x) * 8,  (project_data.character_positions[i].y - y) * 8, 64, i * 4 + project_data.character_positions[i].orientation, project_data.character_positions[i].x % 8 + project_data.character_positions[i].y % 8);
+		}
+		i++;
+	}
+}
+
+void display_map_shadow_character(int x, int y, struct map map, int player)
+{
+	int dx = x % 8;
+	int dy = y % 8;
+	x = (x - dx) / 8;
+	y = (y - dy) / 8;
+	int i = 0;
+	while (i < 12 && x + i < map.x)
+	{
+		int	j = 0;
+		while (j < 12 && y + j < map.y)
+		{
+			int distancex = x + i - (project_data.character_positions[player].x / 8) - (project_data.character_positions[player].x % 8 > 4);
+			if (distancex < 0)
+				distancex = -distancex;
+			int distancey = y + j - (project_data.character_positions[player].y / 8) - (project_data.character_positions[player].y % 8 > 4);
+			if (distancey < 0)
+				distancey = -distancey;
+			if (distancex + distancey > 3)
+				rect_alpha(i * 64 - dx * 8, j * 64 - dy * 8, 64, 64, 0, 0, 0, 100);
+			if (x + i >= 0 && y + j >= 0)
+			{
+
+			}
+			j++;
+		}
+	i++;
 	}
 }
 
@@ -439,28 +429,6 @@ void display_littlemap(int x, int y, int* map, char* character_map, int* items, 
 	}
 }
 
-void print_characters(int x, int y, int* requests, int delayX, int delayY, int visibility, char* savemap, int length)
-{
-	int i = 0;
-	while (i < 5)
-	{
-		if (requests[i * 3])
-		{
-			int dx = requests[i * 3] - 1 - x + (delayX > 4) - (delayX < -4);
-			int dy = requests[i * 3 + 1] - 1 - y + (delayY > 4) - (delayY < -4);
-			if (dx < 0)
-				dx = -dx;
-			if (dy < 0)
-				dy = -dy;
-			if (dx + dy < visibility && savemap[requests[i * 3] + (requests[i * 3 + 1] - 1) * length])
-				display_sprite(4, 5 * 64 + (requests[i * 3] - 1 - x) * 64 + delayX * 8,
-					5 * 64 + (requests[i * 3 + 1] - 1 - y) * 64 + delayY * 8,
-					64, i * 4, 0);
-		}
-		i++;
-	}
-}
-
 void display_cardsprite(int x, int y, int id)
 {
 	SDL_Rect dest = { x, y, 32, 64 };
@@ -470,6 +438,7 @@ void display_cardsprite(int x, int y, int id)
 
 char check_choice(char* title, char* author)
 {
+	int size_screen = 1104 - software_mode * 400;
 	SDL_Surface* surfacetitle = TTF_RenderText_Solid(police[1], title, text_colors[1]);
 	SDL_Surface* surfaceauthor = TTF_RenderText_Solid(police[1], author, text_colors[1]);
 	SDL_Texture* texturetitle = SDL_CreateTextureFromSurface(renderer, surfacetitle);
@@ -484,27 +453,27 @@ char check_choice(char* title, char* author)
 	SDL_Rect destauthor = {70, 350, wauthor, hauthor};
 	SDL_Rect srctitle = {0, 0, wtitle, htitle};
 	SDL_Rect srcauthor = {0, 0, wauthor, hauthor};
-	if (wtitle > 964)
+	if (wtitle > size_screen - 70 * 2)
 	{
-		desttitle.w = 964;
-		srctitle.w = 964;
+		desttitle.w = size_screen - 70 * 2;
+		srctitle.w = size_screen - 70 * 2;
 	}
-	if (wauthor > 964)
+	if (wauthor > size_screen - 70 * 2)
 	{
-		destauthor.w = 964;
-		srcauthor.w = 964;
+		destauthor.w = size_screen - 70 * 2;
+		srcauthor.w = size_screen - 70 * 2;
 	}
-	rect(50, 100, 1004, 400, 255, 255, 255);
+	rect(50, 100, size_screen - 50 * 2, 400, 255, 255, 255);
 	clean_inputs();
 	int x = 0;
 	while (!inputs[0] && !inputs[5] && !inputs[6])
 	{
-		rect(58, 108, 988, 384, 0, 0, 0);
-		print_text_centered(58, 120, "Choisir ce fichier ?", 1, 1, 988);
+		rect(58, 108, size_screen - 58 * 2, 384, 0, 0, 0);
+		print_text_centered(58, 120, "Choisir ce fichier ?", 1, 1, size_screen - 58 * 2);
 		print_text(70, 220, "Nom :", 1, 1);
 		print_text(70, 320, "De :", 1, 1);
-		print_text_centered(70, 400, "Oui", 1, 1 + (x == 0), 988);
-		print_text_centered(70, 430, "Non", 1, 1 + (x == 1), 988);
+		print_text_centered(70, 400, "Oui", 1, 1 + (x == 0), size_screen - 70 * 2);
+		print_text_centered(70, 430, "Non", 1, 1 + (x == 1), size_screen - 70 * 2);
 		SDL_RenderCopy(renderer, texturetitle, &srctitle, &desttitle);
 		SDL_RenderCopy(renderer, textureauthor, &srcauthor, &destauthor);
 		print_refresh();
@@ -523,19 +492,19 @@ char check_choice(char* title, char* author)
 			else
 				srcauthor.x = 0;
 		}
-		if (inputs[4] && srctitle.x + 906 < wtitle)
+		if (inputs[4] && srctitle.x + (size_screen - 8 - 70 * 2) - 50 < wtitle)
 		{
-			if (srctitle.x + 956 < wtitle)
+			if (srctitle.x + (size_screen - 8 - 70 * 2) < wtitle)
 				srctitle.x += 50;
 			else
-				srctitle.x = wtitle - 956;
+				srctitle.x = wtitle - (size_screen - 8 - 70 * 2);
 		}
-		if (inputs[4] && srcauthor.x + 906 < wauthor)
+		if (inputs[4] && srcauthor.x + (size_screen - 8 - 70 * 2) - 50 < wauthor)
 		{
-			if (srcauthor.x + 956 < wauthor)
+			if (srcauthor.x + (size_screen - 8 - 70 * 2) < wauthor)
 				srcauthor.x += 50;
 			else
-				srcauthor.x =  wauthor - 956;
+				srcauthor.x =  wauthor - (size_screen - 8 - 70 * 2);
 		}
 		if (inputs[1] || inputs[2])
 			x = !x;

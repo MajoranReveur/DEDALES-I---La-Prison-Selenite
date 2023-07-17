@@ -224,7 +224,7 @@ void change_type(struct item *item, struct position p, char mode)
         }
         if (was_container && !is_container)
         {
-            delete_container(project_data, item->ID);
+            delete_container(item->ID);
             item->ID = 0;
         }
         if (!was_container && is_container)
@@ -234,8 +234,8 @@ void change_type(struct item *item, struct position p, char mode)
                 list_for_cards = malloc(sizeof(struct item) * 23);
             if (list_for_cards == NULL && item->type == 8)
             {
-                print_error("Erreur : Memoire insuffisante.");
                 item->type = old_type;
+                print_error("Erreur : Memoire insuffisante.");
             }
             else
             {
@@ -243,9 +243,9 @@ void change_type(struct item *item, struct position p, char mode)
                 struct container *new_list = realloc(project_data.containers, sizeof(struct container) * (new_ID + 1));
                 if (new_list == NULL)
                 {
+                    item->type = old_type;
                     print_error("Erreur : Memoire insuffisante.");
                     print_error_int(new_ID);
-                    item->type = old_type;
                 }
                 else
                 {
@@ -434,7 +434,7 @@ void edit_content_level(long ID, int type)
                 j++;
             }
             int_to_str(string_count, count, 1);
-            char *fields[3] = {string_count, "/", string_capacity};
+            const char *fields[3] = {string_count, "/", string_capacity};
             concat_str(string_total_capacity, fields, 8, 3);
             changes = 0;
             j = 0;

@@ -8,7 +8,7 @@ void project_create()
     string_input(project, 300, "Quel nom donner au projet ?");
     //Check if the project already exists
     char project_file_name[451];
-    char* file_name_parts[5] = {"levels/projects/", project, "[", name, "].txt"};
+    const char* file_name_parts[5] = {"levels/projects/", project, "[", name, "].txt"};
     concat_str(project_file_name, file_name_parts, 450, 5);
 	FILE* file = fopen(project_file_name, "r");
     if (file != NULL)

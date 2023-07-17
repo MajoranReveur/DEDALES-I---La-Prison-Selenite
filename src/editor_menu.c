@@ -325,7 +325,7 @@ void inventory_editor(int character)
             }
             int_to_str(capacity, size, 1);
             int_to_str(content, count, 1);
-            char* fields[3] = {content, "/", capacity};
+            const char* fields[3] = {content, "/", capacity};
             char capacity_output[8] = {0};
             concat_str(capacity_output, fields, 8, 3);
             print_text_centered(704, 305 + j * 70, capacity_output, 1, 6, 400);
@@ -396,7 +396,8 @@ void character_editor(int character)
             struct position p = project_data.character_positions[character];
             if (p.zone)
             {
-                display_map_full(p.x - 5, p.y - 5, project_data.zones[p.zone - 1].maps[p.map], 1);
+                display_map_cells((p.x - 5) * 8, (p.y - 5) * 8, project_data.zones[p.zone - 1].maps[p.map]);
+                display_map_cells((p.x - 5) * 8, (p.y - 5) * 8, project_data.zones[p.zone - 1].maps[p.map]);
                 display_sprite(4, 320, 320, 64, character * 4, 0);
             }
             print_refresh();
@@ -443,7 +444,8 @@ void character_menu()
                 struct position p = project_data.character_positions[i];
                 if (p.zone)
                 {
-                    display_map_full(p.x - 5, p.y - 5, project_data.zones[p.zone - 1].maps[p.map], 1);
+                    display_map_cells((p.x - 5) * 8, (p.y - 5) * 8, project_data.zones[p.zone - 1].maps[p.map]);
+                    display_map_cells((p.x - 5) * 8, (p.y - 5) * 8, project_data.zones[p.zone - 1].maps[p.map]);
                     display_sprite(4, 320, 320, 64, i * 4, 0);
                 }
             }
@@ -538,6 +540,14 @@ void project_menu()
             {
                 if (save_project(project_data))
                     project_data.modified = 0;
+            }
+            if (i == 3)
+            {
+                if (project_data.modified)
+                    if (save_project(project_data))
+                        project_data.modified = 0;
+                if (!project_data.modified)
+                    export_project(project_data);
             }
             if (i == 4)
                 quit = 1;

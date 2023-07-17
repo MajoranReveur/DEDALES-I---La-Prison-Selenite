@@ -5,6 +5,8 @@
 char file_loaded;
 char file_saved;
 struct project project_data;
+struct savedatas save_data;
+struct backup backup_data;
 
 struct position
 {
@@ -12,6 +14,7 @@ struct position
     int map;
     int x;
     int y;
+    int orientation;
 };
 
 struct item
@@ -59,10 +62,49 @@ Project parameters :
 11 - Number of zones (cannot be less than 5)
 */
 
+struct portal
+{
+    int type;
+    int value;
+    struct position last_position;
+};
+
+struct map_backup
+{
+    int** cells;
+    struct item **items;
+};
+
+struct zone_backup
+{
+    struct map_backup *maps;
+};
+
+struct backup
+{
+    struct zone_backup *zones;
+};
+
+struct request_state
+{
+    char active;
+    int value;
+};
+
+struct savedatas //The save will also contain the current map estates, the character positions (and their inventories) and the containers
+{
+    struct portal portals[5];
+    struct position sleep_target;
+    struct request_state *request_states;
+};
+
 struct map
 {
     int x;
     int y;
+    int x_start;
+    int y_start;
+    int remaining_green_cells;
     int initial_delay;
     int color_length; //Length of color_sequency
     int* color_sequency;
@@ -94,7 +136,7 @@ struct project
 void free_container(struct container c);
 void free_map(struct map r);
 void free_project(struct project p);
-void delete_container(struct project p, long ID);
+void delete_container(long ID);
 
 void add_item(struct container container, int value, int type);
 void remove_item(struct container container, int value);

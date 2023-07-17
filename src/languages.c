@@ -81,7 +81,7 @@ char string_load(FILE* file, char** result)
 
 char language_load(char* language, char first_one)
 {
-    char* file_fields[3] = {
+    const char* file_fields[3] = {
         "res/languages/",
         language,
         ".txt"

@@ -1,5 +1,7 @@
 #include "file_select.h"
 
+extern char software_mode; 
+
 size_t filelist(char* type, char*** list, size_t count) // Fill list with the count first elements with type format, or return the number of files with this format if count is null
 {
 	struct _finddata_t c_file;
@@ -48,6 +50,7 @@ size_t filelist(char* type, char*** list, size_t count) // Fill list with the co
 
 int file_choice(char* type, char** finaltitle, char** finalauthor)
 {
+	int size_screen = 1104 - software_mode * 400;
 	int x = 0;
 	int t = 0;
 	char** list = NULL;
@@ -56,7 +59,7 @@ int file_choice(char* type, char** finaltitle, char** finalauthor)
 	inputs[5] = 0;
 	while (!inputs[5] && !inputs[0] && !inputs[6])
 	{
-		rect(0, 0, 1104, 704, 0, 0, 0);
+		rect(0, 0, size_screen, 704, 0, 0, 0);
 		int y = 0;
 		while (y < 17 && x + y < count)
 		{
@@ -64,15 +67,15 @@ int file_choice(char* type, char** finaltitle, char** finalauthor)
 			y++;
 		}
 		if (count == 0)
-			print_text_centered(0, 308, "Aucun fichier detecte.", 1, 1, 1104);
-		print_text_centered(0, 20, "Selection de fichier", 1, 1, 1104);
+			print_text_centered(0, 308, "Aucun fichier detecte.", 1, 1, size_screen);
+		print_text_centered(0, 20, "Selection de fichier", 1, 1, size_screen);
 		rect(0, 620, 1104, 8, 255, 255, 255);
-		print_text_centered(0, 640, "Selectionner :", 1, 1, 1104/3);
-		print_text_centered(1104/3, 640, "Actualiser :", 1, 1, 1104/3);
-		print_text_centered(2*1104/3, 640, "Retour :", 1, 1, 1104/3);
-		print_text_centered(0, 670, get_key_name(4), 1, 1, 1104/3);
-		print_text_centered(1104/3, 670, get_key_name(9), 1, 1, 1104/3);
-		print_text_centered(2*1104/3, 670, get_key_name(5), 1, 1, 1104/3);
+		print_text_centered(0, 640, "Selectionner :", 1, 1, size_screen/3);
+		print_text_centered(1104/3, 640, "Actualiser :", 1, 1, size_screen/3);
+		print_text_centered(2*1104/3, 640, "Retour :", 1, 1, size_screen/3);
+		print_text_centered(0, 670, get_key_name(4), 1, 1, size_screen/3);
+		print_text_centered(1104/3, 670, get_key_name(9), 1, 1, size_screen/3);
+		print_text_centered(2*1104/3, 670, get_key_name(5), 1, 1, size_screen/3);
 		print_refresh();
 		load_input_long();
 		if (inputs[1])
@@ -107,7 +110,7 @@ int file_choice(char* type, char** finaltitle, char** finalauthor)
 		}
 		if (inputs[10])
 		{
-			rect(12, 80, 1000, 484, 0, 0, 0);
+			rect(12, 80, size_screen - 12 * 2, 484, 0, 0, 0);
 			size_t i = 0;
 			while (i < count)
 			{

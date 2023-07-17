@@ -4,6 +4,7 @@ const Uint32 DELAY = 20;
 SDL_Keycode CONTROLS[23];
 char inputs[24] = {0};
 char in_options = 0;
+Uint32 start_time;
 
 char* input_names[] = {
 		"Haut",
@@ -56,6 +57,7 @@ void default_inputs()
 	CONTROLS[20] = SDLK_1;
 	CONTROLS[21] = SDLK_2;
 	CONTROLS[22] = SDLK_3;
+	start_time = SDL_GetTicks();
 }
 
 void clean_inputs()
@@ -71,7 +73,6 @@ void clean_inputs()
 void load_input()
 {
 	SDL_Event ev;
-	Uint32 start_time = SDL_GetTicks();
 	do
 	{
 		SDL_WaitEventTimeout(&ev, 10);
@@ -104,6 +105,7 @@ void load_input()
 		if (software_mode == 0)
 			save_project(project_data);
 	}
+	start_time = SDL_GetTicks();
 }
 
 void load_input_long()
