@@ -138,5 +138,5 @@ void free_map(struct map r);
 void free_project(struct project p);
 void delete_container(long ID);
 
-void add_item(struct container container, int value, int type);
+void add_item(struct container container, struct item o);
 void remove_item(struct container container, int value);

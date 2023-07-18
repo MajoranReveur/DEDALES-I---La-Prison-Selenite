@@ -494,7 +494,10 @@ void edit_content_level(long ID, int type)
                 k++;
             }
             if (inputs[3])
-                add_item(project_data.containers[ID], value, item_type);
+            {
+                struct item o; o.type = item_type; o.value = value; o.activation = 0; o.ID = 0;
+                add_item(project_data.containers[ID], o);
+            }
             if (inputs[4])
                 remove_item(project_data.containers[ID], value);
             changes = 1;
@@ -514,7 +517,8 @@ void edit_content_level(long ID, int type)
                     map_choice(&value, 3);
                 if (value)
                 {
-                    add_item(project_data.containers[ID], value, item_type);
+                    struct item o; o.type = item_type; o.value = value; o.activation = 0; o.ID = 0;
+                    add_item(project_data.containers[ID], o);
                     changes = 1;
                 }
             }

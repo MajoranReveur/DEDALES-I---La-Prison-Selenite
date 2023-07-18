@@ -2,6 +2,11 @@
 
 int player = 0;
 
+int get_player()
+{
+    return player;
+}
+
 void display_current_screen(struct position camera)
 {
     rect(0, 0, 704, 704, 0, 0, 0);
@@ -85,6 +90,86 @@ struct item get_front_item(struct position p_player)
     return project_data.zones[p_player.zone - 1].maps[p_player.map].items[x][y];
 }
 
+void complete_front_item(struct position p_player)
+{
+    if (!is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
+        return;
+    int dx = 0;
+    int dy = 0;
+    if (p_player.orientation == 1)
+        dy = -1;
+    if (p_player.orientation == 0)
+        dy = 1;
+    if (p_player.orientation == 2)
+        dx = -1;
+    if (p_player.orientation == 3)
+        dx = 1;
+    int x = p_player.x / 8 + dx;
+    int y = p_player.y / 8 + dy;
+    if (!is_in_map(x, y, p_player.map, p_player.zone))
+        return;
+    project_data.zones[p_player.zone - 1].maps[p_player.map].items[x][y].type = 0;
+}
+
+void take_item(struct position p, int player)
+{
+    if (is_in_map(p.x / 8, p.y / 8, p.map, p.zone))
+    {
+        struct item objet = project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8];
+        int i = 0;
+        char found = 0;
+        while (i < 40 && !found)
+        {
+            if (project_data.inventories[player][i].type)
+                i++;
+            else
+                found = 1;
+        }
+        if (found)
+        {
+            project_data.inventories[player][i] = objet;
+            project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
+        }
+    }
+}
+
+void take_item_in_container(struct position p, int player)
+{
+    if (is_in_map(p.x / 8, p.y / 8, p.map, p.zone))
+    {
+        struct item objet = project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8];
+        int necessary_container = 0;
+        if (objet.type == 16)
+            necessary_container = 9;
+        if (objet.type == 14)
+            necessary_container = 7;
+        int i = 0;
+        char found = 0;
+        //print_error_int(necessary_container);
+        while (i < 40 && !found && necessary_container)
+        {
+            if (project_data.inventories[player][i].type == necessary_container)
+            {
+                //print_error("found");
+                int j = 0;
+                while (j < project_data.containers[project_data.inventories[player][i].ID].size)
+                {
+                    if (project_data.containers[project_data.inventories[player][i].ID].items[j].type == 0)
+                        found = 1;
+                    j++;
+                }
+            }
+            if (!found)
+                i++;
+        }
+        if (found)
+        {
+            add_item(project_data.containers[project_data.inventories[player][i].ID], objet);
+            project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
+        }
+    }
+}
+
 void reboot_portal(int zone, int map, int player)
 {
     int i = 0;
@@ -150,11 +235,36 @@ void quit_portal(int zone, int map, int player)
     }
 }
 
+char has_key(int value)
+{
+    int i = 0;
+    char found = 0;
+    //print_error_int(necessary_container);
+    while (i < 40 && !found)
+    {
+        if (project_data.inventories[player][i].type == 9)
+        {
+            //print_error("found");
+            int j = 0;
+            while (j < project_data.containers[project_data.inventories[player][i].ID].size)
+            {
+                if (project_data.containers[project_data.inventories[player][i].ID].items[j].type == 16 
+                && project_data.containers[project_data.inventories[player][i].ID].items[j].value == value)
+                    found = 1;
+                j++;
+            }
+        }
+        i++;
+    }
+    return found;
+}
+
 void main_loop()
 {
     char done = 0;
     char in_motion = 0;
     char map_changed = 0;
+    char first_move = 0;
     struct position p_player;
     while (!done)
     {
@@ -180,7 +290,7 @@ void main_loop()
                 }
                 if (objet.type == 16)
                 {
-                    if (!objet.activation)
+                    if (!objet.activation && 0)
                     {
                         if (project_data.zones[1].map_number >= objet.value && objet.value)
                         {
@@ -194,6 +304,14 @@ void main_loop()
                             map_changed = 1;
                         }
                     }
+                    else
+                    {
+                        take_item_in_container(p_player, player);
+                    }
+                }
+                if (objet.type >= 7 && objet.type <= 13)
+                {
+                    take_item(p_player, player);
                 }
             }
         }
@@ -208,7 +326,10 @@ void main_loop()
             if (inputs[4])
                 p_player.orientation = 3;
             if (inputs[1] || inputs[2] || inputs[3] || inputs[4])
+            {
+                first_move = 1;
                 in_motion = 1;
+            }
         }
         if (in_motion && !(p_player.x % 8 || p_player.y % 8))
         {
@@ -219,9 +340,17 @@ void main_loop()
             {
                 struct item objet = get_front_item(p_player);
                 if (objet.type == 22)
+                {
                     in_motion = 0;
+                    if (first_move)
+                    {
+                        if (has_key(objet.value))
+                            complete_front_item(p_player);
+                    }
+                }
             }
         }
+        first_move = 0;
         if (map_changed)
         {
             clean_inputs();

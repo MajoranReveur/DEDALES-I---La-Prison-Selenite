@@ -8,4 +8,5 @@
 
 extern char** main_menu_texts;
 
+void inventory();
 void main_menu_game();

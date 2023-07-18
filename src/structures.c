@@ -85,10 +85,10 @@ void delete_container(long ID)
     //print_error("Delete succeeded");
 }
 
-void add_item(struct container container, int value, int type)
+void add_item(struct container container, struct item o)
 {
     int j = 0;
-    while (container.items[j].value < value && container.items[j].value)
+    while (container.items[j].value < o.value && container.items[j].value)
         j++;
     int k = container.size - 1;
     while (k > j)
@@ -97,8 +97,10 @@ void add_item(struct container container, int value, int type)
         container.items[k + 1].type = container.items[k].type;
         container.items[k + 1].value = container.items[k].value;
     }
-    container.items[j].type = type;
-    container.items[j].value = value;
+    container.items[j].type = o.type;
+    container.items[j].value = o.value;
+    container.items[j].activation = o.activation;
+    container.items[j].ID = o.ID;
 }
 
 void remove_item(struct container container, int value)

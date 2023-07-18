@@ -1,5 +1,50 @@
 #include "game_menu.h"
 
+int x_inventory = 0;
+int y_inventory = 0;
+
+void inventory()
+{
+    int player = get_player();
+    clean_inputs();
+    while (!inputs[0] && !inputs[14])
+    {
+        rect(56, 56, 592, 592, 255, 255, 255);
+        rect(60, 60, 584, 584, 0, 0, 0);
+        int i = 0;
+        while (i < 8)
+        {
+            int j = 0;
+            while (j < 5)
+            {
+                rect(68 + 72 * i, 68 + 72 * j, 64, 64, 50, 50, 50);
+                if (project_data.inventories[player][i + j * 8].type)
+                    display_sprite(3, 68 + 72 * i, 68 + 72 * j, 64, project_data.inventories[player][i + j * 8].type - 1, 0);
+                j++;
+            }
+            i++;
+        }
+        rect(60, 428, 584, 4, 255, 255, 255);
+        rect(64 + 72 * x_inventory, 64 + 72 * y_inventory, 72, 4, 0, 0, 255);
+        rect(64 + 72 * x_inventory, 64 + 72 * y_inventory, 4, 72, 0, 0, 255);
+        rect(132 + 72 * x_inventory, 64 + 72 * y_inventory, 4, 72, 0, 0, 255);
+        rect(64 + 72 * x_inventory, 132 + 72 * y_inventory, 72, 4, 0, 0, 255);
+        
+        print_text_centered(112, 436, items_texts[project_data.inventories[player][x_inventory + y_inventory * 8].type], 1, 1, 480);
+        print_refresh();
+        load_input_long();
+        if (inputs[3] && x_inventory)
+            x_inventory--;
+        if (inputs[4] && x_inventory < 7)
+            x_inventory++;
+        if (inputs[1] && y_inventory)
+            y_inventory--;
+        if (inputs[2] && y_inventory < 4)
+            y_inventory++;
+    }
+    clean_inputs();
+}
+
 void main_menu_game()
 {
     while(!inputs[0])

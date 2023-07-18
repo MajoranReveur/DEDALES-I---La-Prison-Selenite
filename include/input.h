@@ -5,12 +5,13 @@
 #include "print.h"
 #include "options.h"
 #include "file_write.h"
+#include "game_menu.h"
 
 extern char software_mode;
 extern char file_loaded;
 extern struct project project_data;
 
-extern char inputs[24];
+extern char inputs[25];
 
 void default_inputs();
 void clean_inputs();

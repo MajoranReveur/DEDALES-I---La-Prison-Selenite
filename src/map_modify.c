@@ -136,9 +136,9 @@ void modify_cell_map(int zone, int *map)
             x_cursor--;
         if (inputs[4])
             x_cursor++;
-        if (inputs[15] && *map)
+        if (inputs[16] && *map)
             (*map)--;
-        if (inputs[16] && *map + 1 < project_data.zones[zone].map_number)
+        if (inputs[17] && *map + 1 < project_data.zones[zone].map_number)
             (*map)++;
         update_camera(zone, *map);
     }
@@ -256,9 +256,9 @@ void modify_item_map(int zone, int *map)
             x_cursor--;
         if (inputs[4])
             x_cursor++;
-        if (inputs[15] && *map)
+        if (inputs[16] && *map)
             (*map)--;
-        if (inputs[16] && *map + 1 < project_data.zones[zone].map_number)
+        if (inputs[17] && *map + 1 < project_data.zones[zone].map_number)
             (*map)++;
         update_camera(zone, *map);
     }
@@ -289,9 +289,9 @@ void move_cursor(int zone, int *map)
             x_cursor--;
         if (inputs[4])
             x_cursor++;
-        if (inputs[15] && *map)
+        if (inputs[16] && *map)
             (*map)--;
-        if (inputs[16] && *map + 1 < project_data.zones[zone].map_number)
+        if (inputs[17] && *map + 1 < project_data.zones[zone].map_number)
             (*map)++;
         update_camera(zone, *map);
     }
@@ -325,13 +325,13 @@ void change_start(int zone, int* map)
             x_cursor--;
         if (inputs[4])
             x_cursor++;
-        if (inputs[15] && *map)
+        if (inputs[16] && *map)
         {
             (*map)--;
             x_cursor = project_data.zones[zone].maps[*map].x_start;
             y_cursor = project_data.zones[zone].maps[*map].y_start;
         }
-        if (inputs[16] && *map + 1 < project_data.zones[zone].map_number)
+        if (inputs[17] && *map + 1 < project_data.zones[zone].map_number)
         {
             (*map)++;
             x_cursor = project_data.zones[zone].maps[*map].x_start;
@@ -379,9 +379,9 @@ char position_choice_cell(int zone, int *map, struct position *p)
             x_cursor--;
         if (inputs[4])
             x_cursor++;
-        if (inputs[15] && *map)
+        if (inputs[16] && *map)
             (*map)--;
-        if (inputs[16] && *map + 1 < project_data.zones[zone].map_number)
+        if (inputs[17] && *map + 1 < project_data.zones[zone].map_number)
             (*map)++;
         update_camera(zone, *map);
     }
@@ -692,7 +692,7 @@ void modify_map(int zone, int map)
     int i = 0;
     while (!inputs[0] && !quit)
     {
-        while (!inputs[0] && !inputs[5] && !inputs[6] && !inputs[15] && !inputs[16])
+        while (!inputs[0] && !inputs[5] && !inputs[6] && !inputs[16] && !inputs[17])
         {
             display_map_cells(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[map]);
             display_map_items(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[map]);
@@ -751,11 +751,11 @@ void modify_map(int zone, int map)
         }
         if (inputs[6])
             quit = 1;
-        if (inputs[15] && map)
+        if (inputs[16] && map)
             map--;
-        if (inputs[16] && map + 1 < project_data.zones[zone].map_number)
+        if (inputs[17] && map + 1 < project_data.zones[zone].map_number)
             map++;
-        if (inputs[15] || inputs[16])
+        if (inputs[16] || inputs[17])
             update_camera(zone, map);
         clean_inputs();
     }

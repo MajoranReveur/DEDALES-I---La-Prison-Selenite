@@ -1,9 +1,10 @@
 #include "input.h"
 
 const Uint32 DELAY = 20;
-SDL_Keycode CONTROLS[23];
-char inputs[24] = {0};
+SDL_Keycode CONTROLS[24];
+char inputs[25] = {0};
 char in_options = 0;
+char in_inventory = 0;
 Uint32 start_time;
 
 char* input_names[] = {
@@ -20,6 +21,7 @@ char* input_names[] = {
 		"Changer l'Affichage",
 		"Eveil",
 		"Sommeil",
+		"Inventaire",
 		"Ouvrir la Carte",
 		"Carte Precedente",
 		"Carte Suivante",
@@ -47,16 +49,17 @@ void default_inputs()
 	CONTROLS[10] = SDLK_BACKSPACE;
 	CONTROLS[11] = SDLK_LCTRL;
 	CONTROLS[12] = SDLK_LSHIFT;
-	CONTROLS[13] = SDLK_BACKSPACE;
-	CONTROLS[14] = SDLK_KP_MINUS;
-	CONTROLS[15] = SDLK_KP_PLUS;
-	CONTROLS[16] = SDLK_q;
-	CONTROLS[17] = SDLK_r;
-	CONTROLS[18] = SDLK_s;
-	CONTROLS[19] = SDLK_c;
-	CONTROLS[20] = SDLK_1;
-	CONTROLS[21] = SDLK_2;
-	CONTROLS[22] = SDLK_3;
+	CONTROLS[13] = SDLK_i;
+	CONTROLS[14] = SDLK_BACKSPACE;
+	CONTROLS[15] = SDLK_KP_MINUS;
+	CONTROLS[16] = SDLK_KP_PLUS;
+	CONTROLS[17] = SDLK_q;
+	CONTROLS[18] = SDLK_r;
+	CONTROLS[19] = SDLK_s;
+	CONTROLS[20] = SDLK_c;
+	CONTROLS[21] = SDLK_1;
+	CONTROLS[22] = SDLK_2;
+	CONTROLS[23] = SDLK_3;
 	start_time = SDL_GetTicks();
 }
 
@@ -86,45 +89,6 @@ void load_input()
 		else if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP)
 		{
 			int i = 0;
-			while (i < 230)
-			{
-				if (ev.key.keysym.sym == CONTROLS[i])
-					inputs[i + 1] = ev.type == SDL_KEYDOWN;
-				i++;
-			}
-		}
-	} while (SDL_GetTicks() < start_time + DELAY);
-	if (inputs[9] && !in_options)
-	{
-		in_options = 1;
-		options_menu();
-		in_options = 0;
-	}
-	if (inputs[19] && file_loaded && !file_saved)
-	{
-		if (software_mode == 0)
-			save_project(project_data);
-	}
-	start_time = SDL_GetTicks();
-}
-
-void load_input_long()
-{
-	SDL_Event ev;
-	Uint32 start_time = SDL_GetTicks();
-	do
-	{
-		SDL_WaitEvent(&ev);
-		if (ev.type == SDL_WINDOWEVENT && ev.window.event == SDL_WINDOWEVENT_CLOSE)
-			ev.type = SDL_QUIT;
-		if (ev.type == SDL_QUIT)
-		{
-			start_time -= DELAY;
-			inputs[0] = 1;
-		}
-		else if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP)
-		{
-			int i = 0;
 			while (i < 23)
 			{
 				if (ev.key.keysym.sym == CONTROLS[i])
@@ -139,10 +103,61 @@ void load_input_long()
 		options_menu();
 		in_options = 0;
 	}
-	if (inputs[19] && file_loaded)
+	if (inputs[20] && file_loaded && !file_saved)
 	{
 		if (software_mode == 0)
 			save_project(project_data);
+	}
+	if (inputs[14] && software_mode == 1 && in_inventory == 0)
+	{
+		in_inventory = 1;
+		inventory();
+		in_inventory = 0;
+	}
+	start_time = SDL_GetTicks();
+}
+
+void load_input_long()
+{
+	SDL_Event ev;
+	start_time = SDL_GetTicks();
+	do
+	{
+		SDL_WaitEvent(&ev);
+		if (ev.type == SDL_WINDOWEVENT && ev.window.event == SDL_WINDOWEVENT_CLOSE)
+			ev.type = SDL_QUIT;
+		if (ev.type == SDL_QUIT)
+		{
+			start_time -= DELAY;
+			inputs[0] = 1;
+		}
+		else if (ev.type == SDL_KEYDOWN || ev.type == SDL_KEYUP)
+		{
+			int i = 0;
+			while (i < 24)
+			{
+				if (ev.key.keysym.sym == CONTROLS[i])
+					inputs[i + 1] = ev.type == SDL_KEYDOWN;
+				i++;
+			}
+		}
+	} while (SDL_GetTicks() < start_time + DELAY);
+	if (inputs[9] && !in_options)
+	{
+		in_options = 1;
+		options_menu();
+		in_options = 0;
+	}
+	if (inputs[20] && file_loaded)
+	{
+		if (software_mode == 0)
+			save_project(project_data);
+	}
+	if (inputs[14] && software_mode == 1 && in_inventory == 0)
+	{
+		in_inventory = 1;
+		inventory();
+		in_inventory = 0;
 	}
 }
 
@@ -375,7 +390,7 @@ void input_editor()
 			if (camera && camera == x)
 				camera--;
 		}
-		if (inputs[2] && x < 22)
+		if (inputs[2] && x < 23)
 		{
 			x++;
 			if (camera < 11 && camera + 11 == x)
