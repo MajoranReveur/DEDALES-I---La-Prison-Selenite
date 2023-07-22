@@ -49,15 +49,16 @@ int angle_type(char top, char right, char diagonal);
 void display_map_full(int x, int y, struct map map, char print_item);
 
 void display_map_cells(int x, int y, struct map map);
-void display_map_items(int x, int y, struct map map);
+void display_map_items(int x, int y, struct map map, int player);
 void display_map_characters(int x, int y, int map, int zone);
-void display_map_shadow_character(int x, int y, struct map map, int player);
+void display_map_shadow_character(int x, int y, int map, int zone, int player);
 
 
 
 
-void display_minimap(int x, int y, struct map map, char **visible_map);
+void display_minimap_knowledge(int x, int y, int map, int zone, int player);
 void display_minimap_full(int x, int y, struct map map);
-void display_littlemap(int x, int y, int* map, char* character_map, int* items, int* item_values, int mode);
+void display_littlemap(int x, int y, struct map map);
+void display_littlemap_knowledge(int x, int y, int map, int zone, int player);
 
 char check_choice(char* title, char* author);

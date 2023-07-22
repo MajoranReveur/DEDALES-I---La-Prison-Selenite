@@ -7,6 +7,7 @@ char file_saved;
 struct project project_data;
 struct savedatas save_data;
 struct backup backup_data;
+char perception[10][5];
 
 struct position
 {
@@ -85,6 +86,22 @@ struct backup
     struct zone_backup *zones;
 };
 
+struct map_knowledge
+{
+    char** cells; //0 : unknown, 1 : seen, 2 : visited, 3 : Marked (for electrical armories)
+    char has_map;
+};
+
+struct zone_knowledge
+{
+    struct map_knowledge *maps;
+};
+
+struct character_knowledge
+{
+    struct zone_knowledge *zones;
+};
+
 struct request_state
 {
     char active;
@@ -96,6 +113,7 @@ struct savedatas //The save will also contain the current map estates, the chara
     struct portal portals[5];
     struct position sleep_target;
     struct request_state *request_states;
+    struct character_knowledge knowledge[5];
 };
 
 struct map

@@ -329,14 +329,14 @@ void edit_content_card(long ID)
         {
             if (i || j)
             {
-                if (project_data.containers[ID].items[i + j * 8 - 1].type == 6)
+                if (project_data.containers[ID].items[i + j * 8 - 1].type == 15)
                 {
                     project_data.containers[ID].items[i + j * 8 - 1].type = 0;
                     project_data.containers[ID].items[i + j * 8 - 1].value = 0;
                 }
                 else
                 {
-                    project_data.containers[ID].items[i + j * 8 - 1].type = 6;
+                    project_data.containers[ID].items[i + j * 8 - 1].type = 15;
                     project_data.containers[ID].items[i + j * 8 - 1].value = i + j * 8;
                 }
                 inputs[5] = 0;

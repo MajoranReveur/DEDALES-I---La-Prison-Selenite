@@ -232,17 +232,22 @@ int angle_type(char top, char right, char diagonal)
 	return 4;
 }
 
-void display_minimap(int x, int y, struct map map, char** visible_map)
+void display_minimap_knowledge(int x, int y, int map, int zone, int player)
 {
 	rect(0, 0, 704, 704, 0, 0, 0);
+    if (zone < 1 || zone > project_data.parameters[11])
+        return;
+    if (map < 0 || map >= project_data.zones[zone - 1].map_number)
+		return;
+	struct map m = project_data.zones[zone - 1].maps[map];
 	int i = 0;
-	while (i < 88 && x + i < map.x)
+	while (i < 88 && x + i < m.x)
 	{
 		int j = 0;
-		while (j < 88 && y + j < map.y)
+		while (j < 88 && y + j < m.y)
 		{
-			if (x + i >= 0 && y + j >= 0 && visible_map[x + i][y + j])
-				display_sprite(2, i * 8, j * 8, 8, 0, 0);
+			if (x + i >= 0 && y + j >= 0 && save_data.knowledge[player].zones[zone - 1].maps[map].cells[x + i][y + j])
+				display_sprite(2, i * 8, j * 8, 8, m.cells[x+i][y+j], 0);
 			j++;
 		}
 		i++;
@@ -332,7 +337,7 @@ void display_map_cells(int x, int y, struct map map)
 	}
 }
 
-void display_map_items(int x, int y, struct map map)
+void display_map_items(int x, int y, struct map map, int player)
 {
 	int dx = x % 8;
 	int dy = y % 8;
@@ -351,7 +356,15 @@ void display_map_items(int x, int y, struct map map)
 				int print_x = i * 64 - dx * 8;
 				int print_y = j * 64 - dy * 8;
 				if (map.items[a][b].type)
-					display_sprite(3, print_x, print_y, 64, map.items[a][b].type - 1, 0);
+				{
+					if (map.items[a][b].type == 16)
+					{
+						if (perception[player][0])
+							display_sprite(3, print_x, print_y, 64, map.items[a][b].type - 1, 0);
+					}
+					else
+						display_sprite(3, print_x, print_y, 64, map.items[a][b].type - 1, 0);
+				}
 			}
 			j++;
 		}
@@ -375,54 +388,87 @@ void display_map_characters(int x, int y, int map, int zone)
 	}
 }
 
-void display_map_shadow_character(int x, int y, struct map map, int player)
+void display_map_shadow_character(int x, int y, int map, int zone, int player)
 {
+    if (zone < 1 || zone > project_data.parameters[11])
+        return;
+    if (map < 0 || map >= project_data.zones[zone - 1].map_number)
+		return;
 	int dx = x % 8;
 	int dy = y % 8;
 	x = (x - dx) / 8;
 	y = (y - dy) / 8;
+	struct position p = project_data.character_positions[player];
+	struct map m = project_data.zones[zone - 1].maps[map];
+	p.x = p.x / 8 + (p.x % 8 > 4);
+	p.y = p.y / 8 + (p.y % 8 > 4);
 	int i = 0;
-	while (i < 12 && x + i < map.x)
+	while (i < 12 && x + i < m.x)
 	{
 		int	j = 0;
-		while (j < 12 && y + j < map.y)
+		while (j < 12 && y + j < m.y)
 		{
-			int distancex = x + i - (project_data.character_positions[player].x / 8) - (project_data.character_positions[player].x % 8 > 4);
-			if (distancex < 0)
-				distancex = -distancex;
-			int distancey = y + j - (project_data.character_positions[player].y / 8) - (project_data.character_positions[player].y % 8 > 4);
-			if (distancey < 0)
-				distancey = -distancey;
-			if (distancex + distancey > 3)
-				rect_alpha(i * 64 - dx * 8, j * 64 - dy * 8, 64, 64, 0, 0, 0, 100);
 			if (x + i >= 0 && y + j >= 0)
 			{
-
+				int distancex = x + i - p.x;
+				if (distancex < 0)
+					distancex = -distancex;
+				int distancey = y + j - p.y;
+				if (distancey < 0)
+					distancey = -distancey;
+				if (distancex + distancey > 3)
+					rect(i * 64 - dx * 8, j * 64 - dy * 8, 64, 64, 0, 0, 0);
+				else
+				{
+					if (is_in_map(x+i, y+j, map, zone))
+					{
+						char knowledge_of_cell = save_data.knowledge[player].zones[zone - 1].maps[map].cells[x + i][y + j];
+						if (knowledge_of_cell == 0)
+							rect(i * 64 - dx * 8, j * 64 - dy * 8, 64, 64, 0, 0, 0);
+						if (knowledge_of_cell == 1)
+							rect_alpha(i * 64 - dx * 8, j * 64 - dy * 8, 64, 64, 0, 0, 0, 150);
+					}
+				}
 			}
 			j++;
 		}
-	i++;
+		i++;
 	}
 }
 
-void display_littlemap(int x, int y, int* map, char* character_map, int* items, int* item_values, int mode)
+void display_littlemap(int x, int y, struct map map)
 {
 	rect(0, 0, 704, 704, 0, 0, 0);
 	int i = 0;
-	while (i < 44 && x + i < *map)
+	while (i < 44 && x + i < map.x)
 	{
 		int j = 0;
-		while (j < 44 && y + j < map[1])
+		while (j < 44 && y + j < map.y)
 		{
-			char insums = (x + i >= 0);
-			char incolumns = (y + j >= 0);
-			int target = *map * (y + j) + x + i;
-			if (insums && incolumns && character_map[target + 1])
-			{
-				display_sprite(1, i * 16, j * 16, 16, map[target + 2], 0);
-				if (items[target] && item_values[items[target] * 3 - 3] == mode)
-					rect(i * 16, j * 16, 16, 16, 255, 0, 255);
-			}
+			if (x + i >= 0 && y + j >= 0)
+				display_sprite(1, i * 16, j * 16, 16, map.cells[x + i][y + j], 0);
+			j++;
+		}
+		i++;
+	}
+}
+
+void display_littlemap_knowledge(int x, int y, int map, int zone, int player)
+{
+	rect(0, 0, 704, 704, 0, 0, 0);
+    if (zone < 1 || zone > project_data.parameters[11])
+        return;
+    if (map < 0 || map >= project_data.zones[zone - 1].map_number)
+		return;
+	struct map m = project_data.zones[zone - 1].maps[map];
+	int i = 0;
+	while (i < 44 && x + i < m.x)
+	{
+		int j = 0;
+		while (j < 44 && y + j < m.y)
+		{
+			if (x + i >= 0 && y + j >= 0 && save_data.knowledge[player].zones[zone - 1].maps[map].cells[x + i][y + j])
+				display_sprite(1, i * 16, j * 16, 16, m.cells[x + i][y + j], 0);
 			j++;
 		}
 		i++;

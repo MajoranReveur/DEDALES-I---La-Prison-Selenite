@@ -150,7 +150,7 @@ void modify_item_map(int zone, int *map)
     while (!inputs[0] && !inputs[6])
     {
         display_map_cells(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
-        display_map_items(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
+        display_map_items(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map], 0);
         rect(704, 0, 400, 704, 0, 0, 0);
         print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
         print_int_centered(704, 50, *map + 1, 3, 1, 1, 400);
@@ -362,7 +362,7 @@ char position_choice_cell(int zone, int *map, struct position *p)
     while (!inputs[0] && !inputs[5] && !inputs[6])
     {
         display_map_cells(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
-        display_map_items(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map]);
+        display_map_items(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[*map], 0);
         rect(704, 0, 400, 704, 0, 0, 0);
         print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
         print_int_centered(704, 50, *map + 1, 3, 1, 1, 400);
@@ -695,7 +695,7 @@ void modify_map(int zone, int map)
         while (!inputs[0] && !inputs[5] && !inputs[6] && !inputs[16] && !inputs[17])
         {
             display_map_cells(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[map]);
-            display_map_items(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[map]);
+            display_map_items(x_camera * 8, y_camera * 8, project_data.zones[zone].maps[map], 0);
             rect(704, 0, 400, 704, 0, 0, 0);
             print_text_centered(704, 10, zones_texts[zone], 0, 1, 400);
             print_int_centered(704, 50, map + 1, 3, 1, 1, 400);

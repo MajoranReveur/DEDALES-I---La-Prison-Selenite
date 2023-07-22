@@ -560,9 +560,15 @@ void project_menu()
 
 void main_menu_editor()
 {
+    int i = 0;
+    while (i<10)
+    {
+        perception[0][i] = 1;
+        i++;
+    }
     while(!inputs[0])
     {
-        int i = 0;
+        i = 0;
         inputs[5] = 0;
         while (!inputs[0] && !inputs[5])
         {

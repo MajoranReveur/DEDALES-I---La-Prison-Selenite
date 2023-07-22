@@ -4,7 +4,7 @@ const Uint32 DELAY = 20;
 SDL_Keycode CONTROLS[24];
 char inputs[25] = {0};
 char in_options = 0;
-char in_inventory = 0;
+char in_menu = 0;
 Uint32 start_time;
 
 char* input_names[] = {
@@ -108,11 +108,25 @@ void load_input()
 		if (software_mode == 0)
 			save_project(project_data);
 	}
-	if (inputs[14] && software_mode == 1 && in_inventory == 0)
+	if (inputs[8] && software_mode == 1 && in_menu == 0)
 	{
-		in_inventory = 1;
+		in_menu = 1;
+		pause_menu();
+		in_menu = 0;
+	}
+	if (inputs[14] && software_mode == 1 && in_menu == 0)
+	{
+		in_menu = 1;
 		inventory();
-		in_inventory = 0;
+		in_menu = 0;
+	}
+	if (inputs[15] && software_mode == 1 && in_menu == 0)
+	{
+		in_menu = 1;
+		int player = get_player();
+		int map = project_data.character_positions[player].map;
+		display_map(project_data.character_positions[player].zone, &map);
+		in_menu = 0;
 	}
 	start_time = SDL_GetTicks();
 }
@@ -153,11 +167,11 @@ void load_input_long()
 		if (software_mode == 0)
 			save_project(project_data);
 	}
-	if (inputs[14] && software_mode == 1 && in_inventory == 0)
+	if (inputs[14] && software_mode == 1 && in_menu == 0)
 	{
-		in_inventory = 1;
+		in_menu = 1;
 		inventory();
-		in_inventory = 0;
+		in_menu = 0;
 	}
 }
 

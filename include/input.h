@@ -6,6 +6,7 @@
 #include "options.h"
 #include "file_write.h"
 #include "game_menu.h"
+#include "display_map.h"
 
 extern char software_mode;
 extern char file_loaded;

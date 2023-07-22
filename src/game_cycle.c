@@ -7,19 +7,37 @@ int get_player()
     return player;
 }
 
+void update_perception(int player)
+{
+    int i = 0;
+    while (i < 10)
+    {
+        perception[player][i] = 0;
+        i++;
+    }
+    i = 0;
+    while (i < 40)
+    {
+        struct item objet = project_data.inventories[player][i];
+        if (objet.type == 9)
+            perception[player][0] = 1;
+        i++;
+    }
+}
+
 void display_current_screen(struct position camera)
 {
     rect(0, 0, 704, 704, 0, 0, 0);
-    print_int(0, 0, project_data.parameters[11], 0, 1, 2);
     if (project_data.parameters[11] >= camera.zone)
     {
         if (project_data.zones[camera.zone - 1].map_number > camera.map)
         {
             display_map_cells(camera.x - 40, camera.y - 40, project_data.zones[camera.zone - 1].maps[camera.map]);
-            display_map_items(camera.x - 40, camera.y - 40, project_data.zones[camera.zone - 1].maps[camera.map]);
+            display_map_items(camera.x - 40, camera.y - 40, project_data.zones[camera.zone - 1].maps[camera.map], player);
         }
         display_map_characters(camera.x - 40, camera.y - 40, camera.map, camera.zone);
-        display_map_shadow_character(camera.x - 40, camera.y - 40, project_data.zones[camera.zone - 1].maps[camera.map], player);
+        if (camera.zone == 0 || camera.zone == 5)
+            display_map_shadow_character(camera.x - 40, camera.y - 40, camera.map, camera.zone, player);
     }
     print_refresh();
 }
@@ -131,6 +149,7 @@ void take_item(struct position p, int player)
             project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
         }
     }
+    update_perception(player);
 }
 
 void take_item_in_container(struct position p, int player)
@@ -138,6 +157,11 @@ void take_item_in_container(struct position p, int player)
     if (is_in_map(p.x / 8, p.y / 8, p.map, p.zone))
     {
         struct item objet = project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8];
+        if (objet.type == 14)
+        {
+            objet.value = p.map + 1;
+            project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8] = objet;
+        }
         int necessary_container = 0;
         if (objet.type == 16)
             necessary_container = 9;
@@ -166,6 +190,35 @@ void take_item_in_container(struct position p, int player)
         {
             add_item(project_data.containers[project_data.inventories[player][i].ID], objet);
             project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
+        }
+    }
+}
+
+void take_card(struct position p, int player)
+{
+    if (is_in_map(p.x / 8, p.y / 8, p.map, p.zone))
+    {
+        struct item objet = project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8];
+        if (objet.type == 15 && objet.value)
+        {
+            int i = 0;
+            char found = 0;
+            //print_error_int(necessary_container);
+            while (i < 40 && !found)
+            {
+                if (project_data.inventories[player][i].type == 8)
+                {
+                    if (project_data.containers[project_data.inventories[player][i].ID].items[objet.value - 1].type == 0)
+                        found = 1;
+                }
+                if (!found)
+                    i++;
+            }
+            if (found)
+            {
+                project_data.containers[project_data.inventories[player][i].ID].items[objet.value - 1] = objet;
+                project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
+            }
         }
     }
 }
@@ -259,6 +312,41 @@ char has_key(int value)
     return found;
 }
 
+void update_knowledge(int player)
+{
+    struct position p = project_data.character_positions[player];
+    if (p.x % 8 == 0 && p.y % 8 == 0)
+    {
+        p.x /= 8;
+        p.y /= 8;
+        if (is_in_map(p.x, p.y, p.map, p.zone))
+        {
+            if (save_data.knowledge[player].zones[p.zone - 1].maps[p.map].cells[p.x][p.y] < 2)
+                save_data.knowledge[player].zones[p.zone - 1].maps[p.map].cells[p.x][p.y] = 2;
+        }
+        if (is_in_map(p.x - 1, p.y, p.map, p.zone))
+        {
+            if (save_data.knowledge[player].zones[p.zone - 1].maps[p.map].cells[p.x-1][p.y] < 1)
+                save_data.knowledge[player].zones[p.zone - 1].maps[p.map].cells[p.x-1][p.y] = 1;
+        }
+        if (is_in_map(p.x + 1, p.y, p.map, p.zone))
+        {
+            if (save_data.knowledge[player].zones[p.zone - 1].maps[p.map].cells[p.x+1][p.y] < 1)
+                save_data.knowledge[player].zones[p.zone - 1].maps[p.map].cells[p.x+1][p.y] = 1;
+        }
+        if (is_in_map(p.x, p.y-1, p.map, p.zone))
+        {
+            if (save_data.knowledge[player].zones[p.zone - 1].maps[p.map].cells[p.x][p.y-1] < 1)
+                save_data.knowledge[player].zones[p.zone - 1].maps[p.map].cells[p.x][p.y-1] = 1;
+        }
+        if (is_in_map(p.x, p.y+1, p.map, p.zone))
+        {
+            if (save_data.knowledge[player].zones[p.zone - 1].maps[p.map].cells[p.x][p.y+1] < 1)
+                save_data.knowledge[player].zones[p.zone - 1].maps[p.map].cells[p.x][p.y+1] = 1;
+        }
+    }
+}
+
 void main_loop()
 {
     char done = 0;
@@ -268,6 +356,7 @@ void main_loop()
     struct position p_player;
     while (!done)
     {
+        update_knowledge(player);
         p_player = project_data.character_positions[player];
         display_current_screen(p_player);
         load_input();
@@ -290,7 +379,7 @@ void main_loop()
                 }
                 if (objet.type == 16)
                 {
-                    if (!objet.activation && 0)
+                    if (!objet.activation)
                     {
                         if (project_data.zones[1].map_number >= objet.value && objet.value)
                         {
@@ -302,6 +391,11 @@ void main_loop()
                             p_player.x = project_data.zones[1].maps[objet.value - 1].x_start * 8;
                             p_player.y = project_data.zones[1].maps[objet.value - 1].y_start * 8;
                             map_changed = 1;
+                            save_data.knowledge[player].zones[p_player.zone - 1].maps[p_player.map].has_map = 1;
+                            print_error_int(player);
+                            print_error_int(p_player.zone - 1);
+                            print_error_int(p_player.map);
+                            print_error_int(save_data.knowledge[0].zones[1].maps[0].has_map);
                         }
                     }
                     else
@@ -309,6 +403,12 @@ void main_loop()
                         take_item_in_container(p_player, player);
                     }
                 }
+                if (objet.type == 14)
+                    take_item_in_container(p_player, player);
+                if (objet.type == 14)
+                    take_item_in_container(p_player, player);
+                if (objet.type == 15)
+                    take_card(p_player, player);
                 if (objet.type >= 7 && objet.type <= 13)
                 {
                     take_item(p_player, player);
@@ -447,8 +547,133 @@ void main_loop()
     }
 }
 
+char allocate_knowledge()
+{
+    int perso = 0;
+    char valid = 1;
+    while (perso < 5 && valid)
+    {
+        int i = 0;
+        save_data.knowledge[perso].zones = malloc(sizeof(struct character_knowledge) * project_data.parameters[11]);
+        char valid = save_data.knowledge[perso].zones != NULL;
+        while (i < project_data.parameters[11] && valid)
+        {
+            save_data.knowledge[perso].zones[i].maps = malloc(sizeof(struct map_knowledge) * project_data.zones[i].map_number);
+            valid = save_data.knowledge[perso].zones[i].maps != NULL;
+            int j = 0;
+            while (j < project_data.zones[i].map_number && valid)
+            {
+                save_data.knowledge[perso].zones[i].maps[j].cells = malloc(sizeof(char*) * project_data.zones[i].maps[j].x);
+                save_data.knowledge[perso].zones[i].maps[j].has_map = 0;
+                valid = (save_data.knowledge[perso].zones[i].maps[j].cells != NULL);
+                int x = 0;
+                while (x < project_data.zones[i].maps[j].x && valid)
+                {
+                    save_data.knowledge[perso].zones[i].maps[j].cells[x] = malloc(sizeof(char) * project_data.zones[i].maps[j].y);
+                    valid = (save_data.knowledge[perso].zones[i].maps[j].cells[x] != NULL);
+                    int y = 0;
+                    while (y < project_data.zones[i].maps[j].y && valid)
+                    {
+                        save_data.knowledge[perso].zones[i].maps[j].cells[x][y] = 0;
+                        y++;
+                    }
+                    x++;
+                }
+                while (x && !valid)
+                {
+                    x--;
+                    free(save_data.knowledge[perso].zones[i].maps[j].cells[x]);
+                }
+                if (!valid)
+                {
+                    free(save_data.knowledge[perso].zones[i].maps[j].cells);
+                    save_data.knowledge[perso].zones[i].maps[j].cells = NULL;
+                }
+                j++;
+            }
+            while (j && !valid)
+            {
+                j--;
+                if (save_data.knowledge[perso].zones[i].maps[j].cells)
+                {
+                    int x = 0;
+                    while (x < project_data.zones[i].maps[j].x)
+                    {
+                        free(save_data.knowledge[perso].zones[i].maps[j].cells[x]);
+                        x++;
+                    }
+                    free(save_data.knowledge[perso].zones[i].maps[j].cells);
+                }
+            }
+            if (!valid)
+            {
+                free(save_data.knowledge[perso].zones[i].maps);
+                save_data.knowledge[perso].zones[i].maps = NULL;
+            }
+            i++;
+        }
+        while (i && !valid)
+        {
+            i--;
+            if (save_data.knowledge[perso].zones[i].maps)
+            {
+                int j = 0;
+                while (j < project_data.zones[i].map_number)
+                {
+                    int x = 0;
+                    while (x < project_data.zones[i].maps[j].x)
+                    {
+                        free(save_data.knowledge[perso].zones[i].maps[j].cells[x]);
+                        x++;
+                    }
+                    free(save_data.knowledge[perso].zones[i].maps[j].cells);
+                    j++;
+                }
+                free(save_data.knowledge[perso].zones[i].maps);
+            }
+        }
+        if (!valid)
+            free(save_data.knowledge[perso].zones);
+        if (valid)
+            perso++;
+    }
+    while (perso && !valid)
+    {
+        perso--;
+        int i = 0;
+        while (i < project_data.parameters[11])
+        {
+            if (save_data.knowledge[perso].zones[i].maps)
+            {
+                int j = 0;
+                while (j < project_data.zones[i].map_number)
+                {
+                    int x = 0;
+                    while (x < project_data.zones[i].maps[j].x)
+                    {
+                        free(save_data.knowledge[perso].zones[i].maps[j].cells[x]);
+                        x++;
+                    }
+                    free(save_data.knowledge[perso].zones[i].maps[j].cells);
+                    j++;
+                }
+                free(save_data.knowledge[perso].zones[i].maps);
+            }
+            i++;
+        }
+        free(save_data.knowledge[perso].zones);
+    }
+    return valid;
+}
+
 void launch_game()
 {
+    
+    if (!allocate_knowledge())
+    {
+        print_error("Pas assez de memoire");
+        return;
+    }
     int i = 0;
     backup_data.zones = malloc(sizeof(struct zone_backup) * project_data.parameters[11]);
     char valid = backup_data.zones != NULL;
@@ -545,6 +770,7 @@ void launch_game()
     i = 0;
     while (i < 5)
     {
+        update_perception(i);
         project_data.character_positions[i].x *= 8;
         project_data.character_positions[i].y *= 8;
         project_data.character_positions[i].orientation = 0;
@@ -552,6 +778,7 @@ void launch_game()
         save_data.portals[i].type = 0;
         i++;
     }
+    print_error("Start !");
     player = project_data.parameters[4];
     main_loop();
 }
