@@ -155,9 +155,12 @@ struct project
 void free_container(struct container c);
 void free_map(struct map r);
 void free_project(struct project p);
-void free_save_data();
+void free_save_data(struct savedatas s);
 void free_backup();
 void delete_container(long ID);
 
 void add_item(struct container container, struct item o);
 void remove_item(struct container container, int value);
+
+
+char allocate_knowledge(struct savedatas *s);

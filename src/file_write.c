@@ -206,6 +206,7 @@ void write_project(struct project p)
 
 void write_save_data()
 {
+    write_int(get_player());
     int i = 0;
     while (i < 5)
     {

@@ -363,6 +363,206 @@ char load_map_list(struct zone *zone)
     return check_endline();
 }
 
+char load_portal(struct portal *p)
+{
+    int value = 0;
+    if (!load_int(&value))
+        return 0;
+    p->type = value;
+    if (!load_int(&value))
+        return 0;
+    p->value = value;
+    struct position pos;
+    if (!load_position(&pos))
+        return 0;
+    p->last_position = pos;
+    if (!load_position(&pos))
+        return 0;
+    p->portal_position = pos;
+    return check_endline();
+}
+
+char load_knowledge_map(int zone, int map, struct map_knowledge *m)
+{
+    int value = 0;
+    int i = 0;
+    char valid = 1;
+    while (i < project_data.zones[zone].maps[map].x && valid)
+    {
+        valid = load_char_list(m->cells[i], project_data.zones[zone].maps[map].y);
+        i++;
+    }
+    if (valid)
+        valid = load_int(&value);
+    m->has_map = value;
+    return check_endline() && valid;
+}
+
+char load_knowledge_zone(int zone, struct zone_knowledge *m)
+{
+    int i = 0;
+    char valid = 1;
+    while (i < project_data.zones[zone].map_number && valid)
+    {
+        valid = load_knowledge_map(zone, i, &(m->maps[i]));
+        i++;
+    }
+    return check_endline() && valid;
+}
+
+char load_knowledge(struct character_knowledge *m)
+{
+    int i = 0;
+    char valid = 1;
+    while (i < project_data.parameters[11] && valid)
+    {
+        valid = load_knowledge_zone(i, &(m->zones[i]));
+        i++;
+    }
+    return check_endline() && valid;
+}
+
+char load_save()
+{
+    struct project p;
+    struct savedatas s;
+    int player = 0;
+    char valid = load_int(&player);
+    if (!valid)
+        return 0;
+    s.request_states = NULL;
+    valid = allocate_knowledge(&s);
+    if (!valid)
+        return 0;
+    p.zones = malloc(sizeof(struct zone) * project_data.parameters[11]);
+    if (p.zones == NULL)
+    {
+        free_save_data(s);
+        return 0;
+    }
+    long i = 0;
+    while (i < project_data.parameters[11])
+    {
+        p.zones[i].map_number = 0;
+        p.zones[i].maps = NULL;
+        i++;
+    }
+    if (valid)
+    {
+        p.containers = malloc(sizeof(struct container) * project_data.parameters[10]);
+        valid = p.containers != NULL;
+    }
+    if (!valid)
+    {
+        free(p.containers);
+        free(p.zones);
+        return 0;
+    }
+    i = 0;
+    while (i < project_data.parameters[10])
+    {
+        p.containers[i].items = NULL;
+        i++;
+    }
+    i = 0;
+    struct position pos;
+    while (i < 5 && valid)
+    {
+        print_error_int(i);
+        valid = load_portal(save_data.portals + i);
+        if (valid)
+            valid = load_knowledge(save_data.knowledge + i);
+        if (valid)
+            valid = load_position(&pos);
+        p.character_positions[i] = pos;
+        if (valid)
+            valid = load_item_list(p.inventories[i], 50);
+        i++;
+    }
+    i = 0;
+    while (i < project_data.parameters[11] && valid)
+    {
+       valid = load_map_list(&(p.zones[i]));
+       i++;
+    }
+    if (valid)
+        valid = load_position(&pos);
+    save_data.sleep_target = pos;
+    if (valid)
+        valid = load_container_list(p.containers, project_data.parameters[10]);
+    valid = valid && (fgetc(file) == EOF);
+    if (!valid)
+    {
+        free_save_data(s);
+        free_project(p);
+        return 0;
+    }
+
+
+    i = 0;
+    while (i < 5)
+    {
+        save_data.portals[i] = s.portals[i];
+        project_data.character_positions[i] = p.character_positions[i];
+        int j = 0;
+        while (j < 50)
+        {
+            project_data.inventories[i][j] = p.inventories[i][j];
+            j++;
+        }
+        i++;
+    }
+    i = 0;
+    while (i < project_data.parameters[11])
+    {
+        int j = 0;
+        while (j < project_data.zones[i].map_number)
+        {
+            int k = 0;
+            while (k < project_data.zones[i].maps[j].x)
+            {
+                int l = 0;
+                while (l < project_data.zones[i].maps[j].y)
+                {
+                    project_data.zones[i].maps[j].cells[k][l] = p.zones[i].maps[j].cells[k][l];
+                    project_data.zones[i].maps[j].items[k][l] = p.zones[i].maps[j].items[k][l];
+                    project_data.zones[i].maps[j].thoughts[k][l] = p.zones[i].maps[j].thoughts[k][l];
+                    int c = 0;
+                    while (c < 5)
+                    {
+                        save_data.knowledge[c].zones[i].maps[j].cells[k][l] = s.knowledge[c].zones[i].maps[j].cells[k][l];
+                        c++;
+                    }
+                    l++;
+                }
+                k++;
+            }
+            int c = 0;
+            while (c < 5)
+            {
+                save_data.knowledge[c].zones[i].maps[j].has_map = s.knowledge[c].zones[i].maps[j].has_map;
+                c++;
+            }
+            j++;
+        }
+        i++;
+    }
+    save_data.sleep_target = s.sleep_target;
+    i = 0;
+    while (i < project_data.parameters[10])
+    {
+        int j = 0;
+        while (j < project_data.containers[i].size)
+        {
+            project_data.containers[i].items[j] = p.containers[i].items[j];
+            j++;
+        }
+        i++;
+    }
+    reload_with_character(player);
+    return 1;
+}
+
 char load_project(struct project *p)
 {
     char valid = load_int_list(p->parameters, 12);
@@ -378,21 +578,28 @@ char load_project(struct project *p)
         p->zones[i].maps = NULL;
         i++;
     }
-    while (i < 5)
+    i = 0;
+    while (i < 5 && valid)
     {
         p->requests[i] = malloc(sizeof(struct request) * p->parameters[i + 5]);
         valid = valid && (p->requests[i] != NULL);
         i++; 
     }
-    if (valid)
+    while (i && !valid)
     {
-        p->containers = malloc(sizeof(struct container) * p->parameters[10]);
-        valid = p->containers != NULL;
+        i--;
+        free(p->requests[i]);
     }
+    if (!valid)
+    {
+        free(p->zones);
+        return 0;
+    }
+    p->containers = malloc(sizeof(struct container) * p->parameters[10]);
+    valid = p->containers != NULL;
     i = 0;
     while (i < p->parameters[11])
     {
-
         i++;
     }
     if (!valid)
@@ -404,6 +611,7 @@ char load_project(struct project *p)
             i++;
         }
         free(p->containers);
+        free(p->zones);
         return 0;
     }
     i = 0;
@@ -470,6 +678,41 @@ char open_project(struct project *p)
         file_saved = 0;
         print_error("Projet charge !");
         print_error_int(p->parameters[10]);
+        return 1;
+    }
+    print_error("Mauvais format...");
+    return 0;
+}
+
+char open_save(int spot)
+{
+    print_error("loading");
+    char number[2] = {spot + '0', 0};
+    const char* file_fields[3] = {
+        "levels/saves/save",
+        number,
+        ".txt"
+    };
+    char filename[451] = { 0 };
+    concat_str(filename, file_fields, 450, 3);
+    file = fopen(filename, "r");
+    if (!file)
+    {
+        print_error("Echec...");
+        print_error("    Sources possibles d'erreur :    ");
+        print_error("      - Nom du projet invalide      ");
+        print_error("         - Pseudo invalide          ");
+        print_error("- Dossier levels/projects inexistant");
+        return 0;
+    }
+    char result = load_save();
+    fclose(file);
+    file = NULL;
+    if (result)
+    {
+        file_loaded = 1;
+        file_saved = 0;
+        print_error("Projet charge !");
         return 1;
     }
     print_error("Mauvais format...");

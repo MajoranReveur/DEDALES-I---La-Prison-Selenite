@@ -2,6 +2,8 @@
 
 int player = 0;
 char savable = 1;
+char in_motion = 0;
+char map_changed = 0;
 
 int get_player()
 {
@@ -353,12 +355,20 @@ void update_knowledge(int player)
     }
 }
 
+void reload_with_character(int character)
+{
+    player = character;
+    update_perception(player);
+    in_motion = 0;
+    map_changed = 0;
+}
+
 void main_loop()
 {
     char done = 0;
-    char in_motion = 0;
-    char map_changed = 0;
     char first_move = 0;
+    in_motion = 0;
+    map_changed = 0;
     struct position p_player;
     while (!done)
     {
@@ -366,6 +376,7 @@ void main_loop()
         p_player = project_data.character_positions[player];
         display_current_screen(p_player);
         load_input();
+        p_player = project_data.character_positions[player];
         if (inputs[0])
             done = 1;
         if (!in_motion && !map_changed && inputs[5])
@@ -551,133 +562,14 @@ void main_loop()
             }
         }
         project_data.character_positions[player] = p_player;
+        savable = !in_motion && !map_changed;
     }
-    savable = !in_motion && !map_changed;
-}
-
-char allocate_knowledge()
-{
-    int perso = 0;
-    char valid = 1;
-    while (perso < 5 && valid)
-    {
-        int i = 0;
-        save_data.knowledge[perso].zones = malloc(sizeof(struct character_knowledge) * project_data.parameters[11]);
-        char valid = save_data.knowledge[perso].zones != NULL;
-        while (i < project_data.parameters[11] && valid)
-        {
-            save_data.knowledge[perso].zones[i].maps = malloc(sizeof(struct map_knowledge) * project_data.zones[i].map_number);
-            valid = save_data.knowledge[perso].zones[i].maps != NULL;
-            int j = 0;
-            while (j < project_data.zones[i].map_number && valid)
-            {
-                save_data.knowledge[perso].zones[i].maps[j].cells = malloc(sizeof(char*) * project_data.zones[i].maps[j].x);
-                save_data.knowledge[perso].zones[i].maps[j].has_map = 0;
-                valid = (save_data.knowledge[perso].zones[i].maps[j].cells != NULL);
-                int x = 0;
-                while (x < project_data.zones[i].maps[j].x && valid)
-                {
-                    save_data.knowledge[perso].zones[i].maps[j].cells[x] = malloc(sizeof(char) * project_data.zones[i].maps[j].y);
-                    valid = (save_data.knowledge[perso].zones[i].maps[j].cells[x] != NULL);
-                    int y = 0;
-                    while (y < project_data.zones[i].maps[j].y && valid)
-                    {
-                        save_data.knowledge[perso].zones[i].maps[j].cells[x][y] = 0;
-                        y++;
-                    }
-                    x++;
-                }
-                while (x && !valid)
-                {
-                    x--;
-                    free(save_data.knowledge[perso].zones[i].maps[j].cells[x]);
-                }
-                if (!valid)
-                {
-                    free(save_data.knowledge[perso].zones[i].maps[j].cells);
-                    save_data.knowledge[perso].zones[i].maps[j].cells = NULL;
-                }
-                j++;
-            }
-            while (j && !valid)
-            {
-                j--;
-                if (save_data.knowledge[perso].zones[i].maps[j].cells)
-                {
-                    int x = 0;
-                    while (x < project_data.zones[i].maps[j].x)
-                    {
-                        free(save_data.knowledge[perso].zones[i].maps[j].cells[x]);
-                        x++;
-                    }
-                    free(save_data.knowledge[perso].zones[i].maps[j].cells);
-                }
-            }
-            if (!valid)
-            {
-                free(save_data.knowledge[perso].zones[i].maps);
-                save_data.knowledge[perso].zones[i].maps = NULL;
-            }
-            i++;
-        }
-        while (i && !valid)
-        {
-            i--;
-            if (save_data.knowledge[perso].zones[i].maps)
-            {
-                int j = 0;
-                while (j < project_data.zones[i].map_number)
-                {
-                    int x = 0;
-                    while (x < project_data.zones[i].maps[j].x)
-                    {
-                        free(save_data.knowledge[perso].zones[i].maps[j].cells[x]);
-                        x++;
-                    }
-                    free(save_data.knowledge[perso].zones[i].maps[j].cells);
-                    j++;
-                }
-                free(save_data.knowledge[perso].zones[i].maps);
-            }
-        }
-        if (!valid)
-            free(save_data.knowledge[perso].zones);
-        if (valid)
-            perso++;
-    }
-    while (perso && !valid)
-    {
-        perso--;
-        int i = 0;
-        while (i < project_data.parameters[11])
-        {
-            if (save_data.knowledge[perso].zones[i].maps)
-            {
-                int j = 0;
-                while (j < project_data.zones[i].map_number)
-                {
-                    int x = 0;
-                    while (x < project_data.zones[i].maps[j].x)
-                    {
-                        free(save_data.knowledge[perso].zones[i].maps[j].cells[x]);
-                        x++;
-                    }
-                    free(save_data.knowledge[perso].zones[i].maps[j].cells);
-                    j++;
-                }
-                free(save_data.knowledge[perso].zones[i].maps);
-            }
-            i++;
-        }
-        free(save_data.knowledge[perso].zones);
-    }
-    return valid;
 }
 
 void launch_game()
 {
     save_data.request_states = NULL;
-    if (!allocate_knowledge())
+    if (!allocate_knowledge(&save_data))
     {
         print_error("Pas assez de memoire");
         return;
@@ -750,7 +642,7 @@ void launch_game()
     if (!valid)
     {
         free_backup();
-        free_save_data();
+        free_save_data(save_data);
         print_error("Pas assez de memoire");
         return;
     }
@@ -769,5 +661,5 @@ void launch_game()
     player = project_data.parameters[4];
     main_loop();
     free_backup();
-    free_save_data();
+    free_save_data(save_data);
 }

@@ -67,37 +67,37 @@ void free_backup()
     free(backup_data.zones);
 }
 
-void free_map_knowledge(int character, int zone, int map)
+void free_map_knowledge(struct map_knowledge m, int zone, int map)
 {
     int i = 0;
     while (i < project_data.zones[zone].maps[map].x)
     {
-        free(save_data.knowledge[character].zones[zone].maps[map].cells[i]);
+        free(m.cells[i]);
         i++;
     }
-    free(save_data.knowledge[character].zones[zone].maps[map].cells);
+    free(m.cells);
 }
 
-void free_zone_knowledge(int character, int zone)
+void free_zone_knowledge(struct zone_knowledge m, int zone)
 {
     int i = 0;
     while (i < project_data.zones[zone].map_number)
     {
-        free_map_knowledge(character, zone, i);
+        free_map_knowledge(m.maps[i], zone, i);
         i++;
     }
-    free(save_data.knowledge[character].zones[zone].maps);
+    free(m.maps);
 }
 
-void free_character_knowledge(int character)
+void free_character_knowledge(struct character_knowledge m)
 {
     int i = 0;
     while (i < project_data.parameters[11])
     {
-        free_zone_knowledge(character, i);
+        free_zone_knowledge(m.zones[i], i);
         i++;
     }
-    free(save_data.knowledge[character].zones);
+    free(m.zones);
 }
 
 void free_zone(struct zone z)
@@ -111,13 +111,13 @@ void free_zone(struct zone z)
     free(z.maps);
 }
 
-void free_save_data()
+void free_save_data(struct savedatas s)
 {
-    free(save_data.request_states);
+    free(s.request_states);
     int i = 0;
     while (i < 5)
     {
-        free_character_knowledge(i);
+        free_character_knowledge(s.knowledge[i]);
         i++;
     }
 }
@@ -210,4 +210,123 @@ void remove_item(struct container container, int value)
         container.items[j].type = 0;
         container.items[j].value = 0;
     }
+}
+
+char allocate_knowledge(struct savedatas *s)
+{
+    int perso = 0;
+    char valid = 1;
+    while (perso < 5 && valid)
+    {
+        int i = 0;
+        s->knowledge[perso].zones = malloc(sizeof(struct character_knowledge) * project_data.parameters[11]);
+        char valid = s->knowledge[perso].zones != NULL;
+        while (i < project_data.parameters[11] && valid)
+        {
+            s->knowledge[perso].zones[i].maps = malloc(sizeof(struct map_knowledge) * project_data.zones[i].map_number);
+            valid = s->knowledge[perso].zones[i].maps != NULL;
+            int j = 0;
+            while (j < project_data.zones[i].map_number && valid)
+            {
+                s->knowledge[perso].zones[i].maps[j].cells = malloc(sizeof(char*) * project_data.zones[i].maps[j].x);
+                s->knowledge[perso].zones[i].maps[j].has_map = 0;
+                valid = (s->knowledge[perso].zones[i].maps[j].cells != NULL);
+                int x = 0;
+                while (x < project_data.zones[i].maps[j].x && valid)
+                {
+                    s->knowledge[perso].zones[i].maps[j].cells[x] = malloc(sizeof(char) * project_data.zones[i].maps[j].y);
+                    valid = (s->knowledge[perso].zones[i].maps[j].cells[x] != NULL);
+                    int y = 0;
+                    while (y < project_data.zones[i].maps[j].y && valid)
+                    {
+                        s->knowledge[perso].zones[i].maps[j].cells[x][y] = 0;
+                        y++;
+                    }
+                    x++;
+                }
+                while (x && !valid)
+                {
+                    x--;
+                    free(s->knowledge[perso].zones[i].maps[j].cells[x]);
+                }
+                if (!valid)
+                {
+                    free(s->knowledge[perso].zones[i].maps[j].cells);
+                    s->knowledge[perso].zones[i].maps[j].cells = NULL;
+                }
+                j++;
+            }
+            while (j && !valid)
+            {
+                j--;
+                if (s->knowledge[perso].zones[i].maps[j].cells)
+                {
+                    int x = 0;
+                    while (x < project_data.zones[i].maps[j].x)
+                    {
+                        free(s->knowledge[perso].zones[i].maps[j].cells[x]);
+                        x++;
+                    }
+                    free(s->knowledge[perso].zones[i].maps[j].cells);
+                }
+            }
+            if (!valid)
+            {
+                free(s->knowledge[perso].zones[i].maps);
+                s->knowledge[perso].zones[i].maps = NULL;
+            }
+            i++;
+        }
+        while (i && !valid)
+        {
+            i--;
+            if (s->knowledge[perso].zones[i].maps)
+            {
+                int j = 0;
+                while (j < project_data.zones[i].map_number)
+                {
+                    int x = 0;
+                    while (x < project_data.zones[i].maps[j].x)
+                    {
+                        free(s->knowledge[perso].zones[i].maps[j].cells[x]);
+                        x++;
+                    }
+                    free(s->knowledge[perso].zones[i].maps[j].cells);
+                    j++;
+                }
+                free(s->knowledge[perso].zones[i].maps);
+            }
+        }
+        if (!valid)
+            free(s->knowledge[perso].zones);
+        if (valid)
+            perso++;
+    }
+    while (perso && !valid)
+    {
+        perso--;
+        int i = 0;
+        while (i < project_data.parameters[11])
+        {
+            if (s->knowledge[perso].zones[i].maps)
+            {
+                int j = 0;
+                while (j < project_data.zones[i].map_number)
+                {
+                    int x = 0;
+                    while (x < project_data.zones[i].maps[j].x)
+                    {
+                        free(s->knowledge[perso].zones[i].maps[j].cells[x]);
+                        x++;
+                    }
+                    free(s->knowledge[perso].zones[i].maps[j].cells);
+                    j++;
+                }
+                free(s->knowledge[perso].zones[i].maps);
+            }
+            i++;
+        }
+        free(s->knowledge[perso].zones);
+    }
+    return valid;
 }

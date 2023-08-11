@@ -41,3 +41,5 @@ char load_map_list(struct zone *zone);
 char load_project(struct project *p);
 
 char open_project(struct project *p);
+
+char open_save(int spot);
