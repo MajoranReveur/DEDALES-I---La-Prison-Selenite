@@ -1,10 +1,16 @@
 #include "game_cycle.h"
 
 int player = 0;
+char savable = 1;
 
 int get_player()
 {
     return player;
+}
+
+char is_savable()
+{
+    return savable;
 }
 
 void update_perception(int player)
@@ -384,6 +390,7 @@ void main_loop()
                         if (project_data.zones[1].map_number >= objet.value && objet.value)
                         {
                             save_data.portals[player].last_position = p_player;
+                            save_data.portals[player].portal_position = p_player;
                             save_data.portals[player].type = 2;
                             save_data.portals[player].value = objet.value;
                             p_player.zone = 2;
@@ -535,7 +542,7 @@ void main_loop()
             }
             if (!in_motion && p_player.zone == 2 && project_data.zones[p_player.zone - 1].maps[p_player.map].remaining_green_cells == 0)
             {
-                struct position p = save_data.portals[player].last_position;
+                struct position p = save_data.portals[player].portal_position;
                 project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].activation = 1;
                 project_data.character_positions[player] = p_player;
                 quit_portal(p_player.zone, p_player.map, player);
@@ -545,6 +552,7 @@ void main_loop()
         }
         project_data.character_positions[player] = p_player;
     }
+    savable = !in_motion && !map_changed;
 }
 
 char allocate_knowledge()
@@ -668,7 +676,7 @@ char allocate_knowledge()
 
 void launch_game()
 {
-    
+    save_data.request_states = NULL;
     if (!allocate_knowledge())
     {
         print_error("Pas assez de memoire");
@@ -739,31 +747,10 @@ void launch_game()
         }
         i++;
     }
-    while (i && !valid)
-    {
-        i--;
-        if (backup_data.zones[i].maps)
-        {
-            int j = 0;
-            while (j < project_data.zones[i].map_number)
-            {
-                int x = 0;
-                while (x < project_data.zones[i].maps[j].x)
-                {
-                    free(backup_data.zones[i].maps[j].cells[x]);
-                    free(backup_data.zones[i].maps[j].items[x]);
-                    x++;
-                }
-                free(backup_data.zones[i].maps[j].cells);
-                free(backup_data.zones[i].maps[j].items);
-                j++;
-            }
-            free(backup_data.zones[i].maps);
-        }
-    }
     if (!valid)
     {
-        free(backup_data.zones);
+        free_backup();
+        free_save_data();
         print_error("Pas assez de memoire");
         return;
     }
@@ -781,4 +768,6 @@ void launch_game()
     print_error("Start !");
     player = project_data.parameters[4];
     main_loop();
+    free_backup();
+    free_save_data();
 }

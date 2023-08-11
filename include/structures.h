@@ -68,6 +68,7 @@ struct portal
     int type;
     int value;
     struct position last_position;
+    struct position portal_position;
 };
 
 struct map_backup
@@ -154,6 +155,8 @@ struct project
 void free_container(struct container c);
 void free_map(struct map r);
 void free_project(struct project p);
+void free_save_data();
+void free_backup();
 void delete_container(long ID);
 
 void add_item(struct container container, struct item o);

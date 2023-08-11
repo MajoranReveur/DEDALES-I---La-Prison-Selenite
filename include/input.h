@@ -18,6 +18,7 @@ void default_inputs();
 void clean_inputs();
 void load_input();
 void load_input_long();
+void load_input_error();
 void string_input(char* rep, size_t length, char *instruction);
 int int_input(int n, int x, int y); //TODO
 const char* get_key_name(int i);

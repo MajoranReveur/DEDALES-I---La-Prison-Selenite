@@ -201,8 +201,8 @@ void change_type(struct item *item, struct position p, char mode)
                 new_list = realloc(project_data.containers[item->ID].items, sizeof(struct item) * 23);
             if (new_list == NULL && item->type == 8)
             {
-                print_error("Erreur : Memoire insuffisante.");
                 item->type = old_type;
+                print_error("Erreur : Memoire insuffisante.");
             }
             else
             {

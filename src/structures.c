@@ -22,6 +22,84 @@ void free_map(struct map r)
     free(r.color_sequency);
 }
 
+void free_map_backup(int zone, int map)
+{
+    int i = 0;
+    
+    if (backup_data.zones[zone].maps[map].cells != NULL && backup_data.zones[zone].maps[map].items != NULL)
+    {
+        while (i < project_data.zones[zone].maps[map].x)
+        {
+            free(backup_data.zones[zone].maps[map].cells[i]);
+            free(backup_data.zones[zone].maps[map].items[i]);
+            i++;
+        }
+    }
+    free(backup_data.zones[zone].maps[map].cells);
+    free(backup_data.zones[zone].maps[map].items);
+}
+
+void free_zone_backup(int zone)
+{
+    int i = 0;
+    if (backup_data.zones[zone].maps != NULL)
+    {
+        while (i < project_data.zones[zone].map_number)
+        {
+            free_map_backup(zone, i);
+            i++;
+        }
+    }
+    free(backup_data.zones[zone].maps);
+}
+
+void free_backup()
+{
+    int i = 0;
+    if (backup_data.zones != NULL)
+    {
+        while (i < project_data.parameters[11])
+        {
+            free_zone_backup(i);
+            i++;
+        }
+    }
+    free(backup_data.zones);
+}
+
+void free_map_knowledge(int character, int zone, int map)
+{
+    int i = 0;
+    while (i < project_data.zones[zone].maps[map].x)
+    {
+        free(save_data.knowledge[character].zones[zone].maps[map].cells[i]);
+        i++;
+    }
+    free(save_data.knowledge[character].zones[zone].maps[map].cells);
+}
+
+void free_zone_knowledge(int character, int zone)
+{
+    int i = 0;
+    while (i < project_data.zones[zone].map_number)
+    {
+        free_map_knowledge(character, zone, i);
+        i++;
+    }
+    free(save_data.knowledge[character].zones[zone].maps);
+}
+
+void free_character_knowledge(int character)
+{
+    int i = 0;
+    while (i < project_data.parameters[11])
+    {
+        free_zone_knowledge(character, i);
+        i++;
+    }
+    free(save_data.knowledge[character].zones);
+}
+
 void free_zone(struct zone z)
 {
     int i = 0;
@@ -31,6 +109,17 @@ void free_zone(struct zone z)
         i++;
     }
     free(z.maps);
+}
+
+void free_save_data()
+{
+    free(save_data.request_states);
+    int i = 0;
+    while (i < 5)
+    {
+        free_character_knowledge(i);
+        i++;
+    }
 }
 
 void free_project(struct project p)
@@ -85,6 +174,8 @@ void delete_container(long ID)
     //print_error("Delete succeeded");
 }
 
+
+// Commentaires be like POF
 void add_item(struct container container, struct item o)
 {
     int j = 0;
@@ -112,7 +203,7 @@ void remove_item(struct container container, int value)
     {
         container.items[j].type = container.items[j + 1].type;
         container.items[j].value = container.items[j + 1].value;
-        j++;
+        j++; 
     }
     if (j < container.size)
     {

@@ -36,5 +36,6 @@ void write_map_list(struct map *list, int size);
 void write_project(struct project p);
 
 char save_project(struct project p);
+char save_game(int spot);
 
 char export_project(struct project p);

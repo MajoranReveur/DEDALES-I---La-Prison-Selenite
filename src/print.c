@@ -183,7 +183,7 @@ void print_error(const char* text)
 	clean_inputs();
 	print_refresh();
 	while (!inputs[0] && !inputs[5])
-		load_input();
+		load_input_error(); //Won't allow to save, open the menu, the inventory...
 	clean_inputs();
 }
 

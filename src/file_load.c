@@ -467,7 +467,7 @@ char open_project(struct project *p)
     if (result)
     {
         file_loaded = 1;
-        file_saved = 1;
+        file_saved = 0;
         print_error("Projet charge !");
         print_error_int(p->parameters[10]);
         return 1;

@@ -141,6 +141,49 @@ void write_map_list(struct map *list, int size)
     fputc('\n', file);
 }
 
+void write_portal(struct portal p)
+{
+    write_int(p.type);
+    write_int(p.value);
+    write_position(p.last_position);
+    write_position(p.portal_position);
+    fputc('\n', file);
+}
+
+void write_knowledge_map(int character, int zone, int map)
+{
+    int i = 0;
+    while (i < project_data.zones[zone].maps[map].x)
+    {
+        write_char_list(save_data.knowledge[character].zones[zone].maps[map].cells[i], project_data.zones[zone].maps[map].y);
+        i++;
+    }
+    write_int(save_data.knowledge[character].zones[zone].maps[map].has_map);
+    fputc('\n', file);
+}
+
+void write_knowledge_zone(int character, int zone)
+{
+    int i = 0;
+    while (i < project_data.zones[zone].map_number)
+    {
+        write_knowledge_map(character, zone, i);
+        i++;
+    }
+    fputc('\n', file);
+}
+
+void write_knowledge(int character)
+{
+    int i = 0;
+    while (i < project_data.parameters[11])
+    {
+        write_knowledge_zone(character, i);
+        i++;
+    }
+    fputc('\n', file);
+}
+
 void write_project(struct project p)
 {
     write_int_list(p.parameters, 12);
@@ -159,6 +202,27 @@ void write_project(struct project p)
         i++;
     }
     write_container_list(p.containers, p.parameters[10]);
+}
+
+void write_save_data()
+{
+    int i = 0;
+    while (i < 5)
+    {
+        write_portal(save_data.portals[i]);
+        write_knowledge(i);
+        write_position(project_data.character_positions[i]);
+        write_item_list(project_data.inventories[i], 50);
+        i++;
+    }
+    i = 0;
+    while (i < project_data.parameters[11])
+    {
+        write_map_list(project_data.zones[i].maps, project_data.zones[i].map_number);
+        i++;
+    }
+    write_position(save_data.sleep_target);
+    write_container_list(project_data.containers, project_data.parameters[10]);
 }
 
 char save_project(struct project p)
@@ -186,6 +250,35 @@ char save_project(struct project p)
     file_saved = 1;
     print_error("Projet sauvegarde !");
     fclose(file);
+    file = NULL;
+    return 1;
+}
+
+char save_game(int spot)
+{
+    print_error("saving");
+    char number[2] = {spot + '0', 0};
+    const char* file_fields[3] = {
+        "levels/saves/save",
+        number,
+        ".txt"
+    };
+    char filename[451] = { 0 };
+    concat_str(filename, file_fields, 450, 3);
+    print_error(filename);
+    file = fopen(filename, "w");
+    if (!file)
+    {
+        print_error("Echec...");
+        print_error("    Sources possibles d'erreur :    ");
+        print_error("      - Nom du projet invalide      ");
+        print_error("         - Pseudo invalide          ");
+        print_error("- Dossier levels/projects inexistant");
+        return 0;
+    }
+    write_save_data();
+    fclose(file);
+    print_error("Partie sauvegardée !");
     file = NULL;
     return 1;
 }
