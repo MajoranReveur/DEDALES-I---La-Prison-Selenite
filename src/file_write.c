@@ -206,6 +206,7 @@ void write_project(struct project p)
 
 void write_save_data()
 {
+    fprintf(file, "%s\n%s\n", project_data.project_name, project_data.author_name);
     write_int(get_player());
     int i = 0;
     while (i < 5)

@@ -13,7 +13,7 @@ void game_load()
             project_data.project_name = title;
             if (open_project(&project_data))
             {
-                launch_game();
+                launch_game(0, 0);
                 done = 1;
                 free_project(project_data);
             }

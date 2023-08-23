@@ -424,6 +424,16 @@ char load_knowledge(struct character_knowledge *m)
 
 char load_save()
 {
+    char c = fgetc(file);
+    while (c != '\n' && c != EOF)
+        c = fgetc(file);
+    if (c == EOF)
+        return 0;
+    c = fgetc(file);
+    while (c != '\n' && c != EOF)
+        c = fgetc(file);
+    if (c == EOF)
+        return 0;
     struct project p;
     struct savedatas s;
     int player = 0;
@@ -469,9 +479,9 @@ char load_save()
     while (i < 5 && valid)
     {
         print_error_int(i);
-        valid = load_portal(save_data.portals + i);
+        valid = load_portal(s.portals + i);
         if (valid)
-            valid = load_knowledge(save_data.knowledge + i);
+            valid = load_knowledge(s.knowledge + i);
         if (valid)
             valid = load_position(&pos);
         p.character_positions[i] = pos;
@@ -487,7 +497,7 @@ char load_save()
     }
     if (valid)
         valid = load_position(&pos);
-    save_data.sleep_target = pos;
+    s.sleep_target = pos;
     if (valid)
         valid = load_container_list(p.containers, project_data.parameters[10]);
     valid = valid && (fgetc(file) == EOF);

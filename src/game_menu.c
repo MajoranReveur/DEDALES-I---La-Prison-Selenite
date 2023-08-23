@@ -216,13 +216,15 @@ void pause_menu()
             print_text_centered(60, 70, "MENU", 0, 1, 584);
             print_text_centered(60, 150, "Inventaire", 1, 1 + (i == 0), 584);
             print_text_centered(60, 200, "Carte", 1, 1 + (i == 1), 584);
-            print_text_centered(60, 250, "Reprendre", 1, 1 + (i == 2), 584);
+            print_text_centered(60, 250, "Sauvegarder", 1, 1 + (i == 2), 584);
+            print_text_centered(60, 300, "Charger une Sauvegarde", 1, 1 + (i == 3), 584);
+            print_text_centered(60, 350, "Reprendre", 1, 1 + (i == 4), 584);
             print_refresh();
             load_input_long();
             if (inputs[1])
-                i = (i + 2) % 3;
+                i = (i + 4) % 5;
             if (inputs[2])
-                i = (i + 1) % 3;
+                i = (i + 1) % 5;
         }
         if (inputs[5])
         {
@@ -231,6 +233,10 @@ void pause_menu()
             if (i == 1)
                 map_menu(project_data.character_positions[player].zone);
             if (i == 2)
+                save_choice_for_save();
+            if (i == 3)
+                save_choice_for_load();
+            if (i == 4)
                 inputs[6] = 1;
         }
     }
@@ -241,6 +247,8 @@ void main_menu_game()
 {
     while(!inputs[0])
     {
+        project_data.author_name = "";
+        project_data.project_name = "";
         int i = 0;
         rect(0, 0, 1104, 704, 0, 0, 0);
         print_text_centered(0, 10, "DEDALES I", 0, 1, 704);
@@ -250,23 +258,28 @@ void main_menu_game()
         while (!inputs[0] && !inputs[5])
         {
             print_text_centered(0, 300, "Continuer", 1, 1 + (i == 0), 704);
-            print_text_centered(0, 350, "Nouvelle Partie", 1, 1 + (i == 1), 704);
-            print_text_centered(0, 400, "Quitter le logiciel", 1, 1 + (i == 2), 704);
+            print_text_centered(0, 350, "Charger une sauvegarde", 1, 1 + (i == 1), 704);
+            print_text_centered(0, 400, "Nouvelle Partie", 1, 1 + (i == 2), 704);
+            print_text_centered(0, 450, "Quitter le logiciel", 1, 1 + (i == 3), 704);
             print_text(0, 645, "Options :", 1, 1);
             print_text(0, 675, get_key_name(8), 1, 1);
             print_text(1020, 675, "v0.2.0", 1, 1);
             print_refresh();
             load_input_long();
             if (inputs[1])
-                i = (i + 2) % 3;
+                i = (i + 3) % 4;
             if (inputs[2])
-                i = (i + 1) % 3;
+                i = (i + 1) % 4;
         }
         if (!inputs[0])
         {
+            if (i == 0)
+                open_latest_game();
             if (i == 1)
-                game_load();
+                save_choice_for_load_with_game();
             if (i == 2)
+                game_load();
+            if (i == 3)
                 inputs[0] = 1;
         }
     }

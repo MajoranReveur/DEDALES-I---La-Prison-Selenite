@@ -281,6 +281,8 @@ void reboot_portal(int zone, int map, int player)
 
 void quit_portal(int zone, int map, int player)
 {
+    print_error_int(zone);
+    print_error_int(map);
     reboot_portal(zone, map, player);
     int i = 0;
     i = 0;
@@ -360,7 +362,7 @@ void reload_with_character(int character)
     player = character;
     update_perception(player);
     in_motion = 0;
-    map_changed = 0;
+    map_changed = 1;
 }
 
 void main_loop()
@@ -368,7 +370,6 @@ void main_loop()
     char done = 0;
     char first_move = 0;
     in_motion = 0;
-    map_changed = 0;
     struct position p_player;
     while (!done)
     {
@@ -553,11 +554,19 @@ void main_loop()
             }
             if (!in_motion && p_player.zone == 2 && project_data.zones[p_player.zone - 1].maps[p_player.map].remaining_green_cells == 0)
             {
+                print_error("Wait");
                 struct position p = save_data.portals[player].portal_position;
+                print_error_int(p.zone);
+                print_error_int(p.map);
+                print_error_int(p.x);
+                print_error_int(p.y);
                 project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].activation = 1;
+                print_error_int(4);
                 project_data.character_positions[player] = p_player;
+                print_error_int(5);
                 quit_portal(p_player.zone, p_player.map, player);
                 p_player = project_data.character_positions[player];
+                print_error_int(6);
                 map_changed = 1;
             }
         }
@@ -566,7 +575,7 @@ void main_loop()
     }
 }
 
-void launch_game()
+void launch_game(char with_save, int save_spot)
 {
     save_data.request_states = NULL;
     if (!allocate_knowledge(&save_data))
@@ -659,7 +668,14 @@ void launch_game()
     }
     print_error("Start !");
     player = project_data.parameters[4];
-    main_loop();
+    map_changed = 0;
+    if (with_save)
+    {
+        if (open_save(save_spot))
+            main_loop();
+    }
+    else
+        main_loop();
     free_backup();
     free_save_data(save_data);
 }

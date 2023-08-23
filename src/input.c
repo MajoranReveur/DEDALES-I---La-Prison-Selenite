@@ -108,11 +108,12 @@ void load_input()
 		if (software_mode == 0)
 			save_project(project_data);
 		if (software_mode == 1 && is_savable())
-			save_game(1);
+			get_older_spot();
 	}
 	if (inputs[21] && file_loaded && software_mode == 1)
 	{
-		open_save(1);
+		//open_save(1);
+		get_younger_spot();
 	}
 	if (inputs[8] && software_mode == 1 && in_menu == 0)
 	{
@@ -173,11 +174,12 @@ void load_input_long()
 		if (software_mode == 0)
 			save_project(project_data);
 		if (software_mode == 1 && is_savable())
-			save_game(1);
+			get_older_spot();
 	}
 	if (inputs[21] && file_loaded && software_mode == 1)
 	{
-		open_save(1);
+		//open_save(1);
+		get_younger_spot();
 	}
 	if (inputs[14] && software_mode == 1 && in_menu == 0)
 	{
