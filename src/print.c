@@ -210,6 +210,20 @@ void rect_alpha(int x, int y, int w, int h, int r, int g, int b, int alpha)
 	SDL_RenderFillRect(renderer, &rect);
 }
 
+void print_notif(struct notification notif, int y)
+{
+	SDL_Surface* surface = TTF_RenderText_Solid(police[1], notif.message, text_colors[1]);
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+	int w = 0;
+	int h = 0;
+	SDL_QueryTexture(texture, NULL, NULL, &w, &h);
+	SDL_Rect dest = { 5, y + 5, w, h };
+	rect_alpha(dest.x - 5, dest.y - 5, dest.w + 10, dest.h + 10, 150, 150, 150, 150);
+	SDL_RenderCopy(renderer, texture, NULL, &dest);
+	SDL_DestroyTexture(texture);
+	SDL_FreeSurface(surface);
+}
+
 void display_sprite(int type, int x, int y, int size, int column, int line)
 {
 	SDL_Rect dest = { x, y, size, size };
@@ -382,7 +396,9 @@ void display_map_characters(int x, int y, int map, int zone)
 		if (project_data.character_positions[i].zone == zone)
 		{
 			if (project_data.character_positions[i].map == map)
-				display_sprite(4, (project_data.character_positions[i].x - x) * 8,  (project_data.character_positions[i].y - y) * 8, 64, i * 4 + project_data.character_positions[i].orientation, project_data.character_positions[i].x % 8 + project_data.character_positions[i].y % 8);
+				display_sprite(4, (project_data.character_positions[i].x - x) * 8,  (project_data.character_positions[i].y - y) * 8 - 16, 64,
+				i * 4 + project_data.character_positions[i].orientation, project_data.character_positions[i].x % 8 + project_data.character_positions[i].y % 8);
+			
 		}
 		i++;
 	}
@@ -395,7 +411,21 @@ void display_map_shadow_character(int x, int y, int map, int zone, int player)
     if (map < 0 || map >= project_data.zones[zone - 1].map_number)
 		return;
 	int dx = x % 8;
+	if (x < 0)
+	{
+		dx = x;
+		while (dx < 0)
+			dx += 8;
+		dx %= 8;
+	}
 	int dy = y % 8;
+	if (y < 0)
+	{
+		dy = y;
+		while (dy < 0)
+			dy += 8;
+		dy %= 8;
+	}
 	x = (x - dx) / 8;
 	y = (y - dy) / 8;
 	struct position p = project_data.character_positions[player];
@@ -411,24 +441,56 @@ void display_map_shadow_character(int x, int y, int map, int zone, int player)
 			if (x + i >= 0 && y + j >= 0)
 			{
 				int distancex = x + i - p.x;
+				int distance = distancex;
 				if (distancex < 0)
-					distancex = -distancex;
+					distance = -distancex;
 				int distancey = y + j - p.y;
 				if (distancey < 0)
-					distancey = -distancey;
-				if (distancex + distancey > 3)
+					distance -=distancey;
+				else
+					distance += distancey;
+				int base = 0;
+				if (distance == 3)
+				{
+					if (p.orientation < 2 && distancey <= 0 && dy < 5)
+						base = dy * 32;
+					if (p.orientation < 2 && distancey > 0 && dy > 4)
+						base = 255 - dy * 32;
+					if (p.orientation > 1 && distancex <= 0 && dx < 5)
+						base = dx * 32;
+					if (p.orientation > 1 && distancex > 0 && dx > 4)
+						base = 255 - dx * 32;
+				}
+				if (distance > 3)
+					base = 255;
+				if (distance == 4 && distancex && distancey)
+				{
+					if (p.orientation < 2 && distancey <= 0 && dy > 4)
+						base = dy * 32;
+					if (p.orientation < 2 && distancey > 0 && dy < 5)
+						base = 255 - dy * 32;
+					if (p.orientation > 1 && distancex <= 0 && dx > 4)
+						base = dx * 32;
+					if (p.orientation > 1 && distancex > 0 && dx < 5)
+						base = 255 - dx * 32;
+				}
+				if (is_in_map(x+i, y+j, map, zone))
+				{
+					char knowledge_of_cell = save_data.knowledge[player].zones[zone - 1].maps[map].cells[x + i][y + j];
+					if (knowledge_of_cell == 0)
+						base = 255;
+					if (knowledge_of_cell == 1)
+						base = 128 + base / 2;
+				}
+				if (base >= 256)
+					base = 255;
+				rect_alpha(i * 64 - dx * 8, j * 64 - dy * 8, 64, 64, 0, 0, 0, base);
+				/*
+				if (distance > 3)
 					rect(i * 64 - dx * 8, j * 64 - dy * 8, 64, 64, 0, 0, 0);
 				else
 				{
-					if (is_in_map(x+i, y+j, map, zone))
-					{
-						char knowledge_of_cell = save_data.knowledge[player].zones[zone - 1].maps[map].cells[x + i][y + j];
-						if (knowledge_of_cell == 0)
-							rect(i * 64 - dx * 8, j * 64 - dy * 8, 64, 64, 0, 0, 0);
-						if (knowledge_of_cell == 1)
-							rect_alpha(i * 64 - dx * 8, j * 64 - dy * 8, 64, 64, 0, 0, 0, 150);
-					}
-				}
+				}*/
 			}
 			j++;
 		}
@@ -561,4 +623,99 @@ char check_choice(char* title, char* author)
 	SDL_FreeSurface(surfaceauthor);
 	inputs[6] = 0;
 	return (inputs[5] && x == 0);
+}
+
+void display_message(char* message)
+{
+	char line[301];
+	int i = 0;
+	while (message[i])
+	{
+		rect(5, 604, 694, 90, 0, 0, 0);
+		int number_line = 0;
+		while (message[i] && number_line < 3)
+		{
+			int j = 0;
+			while (message[i + j] != '\n' && message[i + j] && j < 300)
+			{
+				line[j] = message[i + j];
+				j++;
+			}
+			line[j] = 0;
+			print_text(10, 609 + number_line * 30, line, 1, 1);
+			i+=j;
+			if (message[i] == '\n')
+			{
+				number_line += 1;
+				i++;
+			}
+		}
+		clean_inputs();
+		print_refresh();
+		while (!inputs[0] && !inputs[5])
+			load_input_error();
+	}
+	clean_inputs();
+}
+
+int ask_question(char* message, char** options, int number_options)
+{
+	char line[301];
+	int i = 0;
+	rect(5, 604, 694, 90, 0, 0, 0);
+	int number_line = 0;
+	while (message[i] && number_line < 3)
+	{
+		int j = 0;
+		while (message[i + j] != '\n' && message[i + j] && j < 300)
+		{
+			line[j] = message[i + j];
+			j++;
+		}
+		line[j] = 0;
+		print_text(10, 609 + number_line * 30, line, 1, 1);
+		i+=j;
+		if (message[i] == '\n')
+		{
+			number_line += 1;
+			i++;
+		}
+	}
+	
+	int max_len = 0;
+	i = 0;
+	while (i < number_options)
+	{
+		SDL_Surface* surface = TTF_RenderText_Solid(police[1], options[i], text_colors[2]);
+		SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+		int w = 0;
+		int h = 0;
+		SDL_QueryTexture(texture, NULL, NULL, &w, &h);
+		SDL_DestroyTexture(texture);
+		SDL_FreeSurface(surface);
+		if (max_len < w)
+			max_len = w;
+		i++;
+	}
+	clean_inputs();
+	int choice = 0;
+	while (!inputs[5] && !inputs[0])
+	{
+		i = 0;
+		rect(689 - max_len, 594 - number_options * 30, max_len + 10, number_options * 30 + 10, 0, 0, 0);
+		while (i < number_options)
+		{
+			print_text(694 - max_len, 599 - number_options * 30 + i * 30, options[i], 1, 1 + (choice == i));
+			i++;
+		}
+		print_refresh();
+		load_input_error();
+		if (inputs[1])
+			choice = (choice + (number_options - 1)) % number_options;
+		if (inputs[2])
+			choice = (choice + 1) % number_options;
+	}
+	
+	clean_inputs();
+	return choice;
 }

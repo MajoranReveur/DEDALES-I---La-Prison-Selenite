@@ -62,3 +62,8 @@ void display_littlemap(int x, int y, struct map map);
 void display_littlemap_knowledge(int x, int y, int map, int zone, int player);
 
 char check_choice(char* title, char* author);
+
+void print_notif(struct notification notif, int y);
+
+void display_message(char* message);
+int ask_question(char* message, char** options, int number_options);

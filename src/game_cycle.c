@@ -44,10 +44,99 @@ void display_current_screen(struct position camera)
             display_map_items(camera.x - 40, camera.y - 40, project_data.zones[camera.zone - 1].maps[camera.map], player);
         }
         display_map_characters(camera.x - 40, camera.y - 40, camera.map, camera.zone);
-        if (camera.zone == 0 || camera.zone == 5)
+        if (camera.zone == 1 || camera.zone == 5)
             display_map_shadow_character(camera.x - 40, camera.y - 40, camera.map, camera.zone, player);
+        display_sprite(4, (project_data.character_positions[player].x - camera.x + 40) * 8,  (project_data.character_positions[player].y - camera.y + 40) * 8 - 16, 
+        64, player * 4 + project_data.character_positions[player].orientation, project_data.character_positions[player].x % 8 + project_data.character_positions[player].y % 8);
     }
-    print_refresh();
+}
+
+
+void order_notifications()
+{
+    int i = 0;
+    while (i < 10)
+    {
+        if (notifs[i].delay > 0)
+        {
+            int j = 0;
+            char found = 0;
+            while (!found && j < i)
+            {
+                found = notifs[j].delay == 0;
+                if (!found)
+                    j++;
+            }
+            if (found)
+            {
+                notifs[j].delay = notifs[i].delay;
+                copy_str(notifs[j].message, notifs[i].message, 300);
+                notifs[i].delay = 0;
+            }
+        }
+        i++;
+    }
+}
+
+void add_notification(char* message)
+{
+    int i = 0;
+    int min_delay = 0;
+    while (i < 10 && notifs[i].delay > 0)
+    {
+        if (notifs[min_delay].delay > notifs[i].delay)
+            min_delay = i;
+        i++;
+    }
+    if (i == 10)
+    {
+        notifs[min_delay].delay = 0;
+        order_notifications();
+        i = 9;
+    }
+    notifs[i].delay = 100;
+    copy_str(notifs[i].message, message, 300);
+}
+
+void add_item_notification(struct item objet)
+{
+    char message[301] = {0};
+    if (objet.type >= 14 && objet.type <= 20)
+    {
+        const char* str[5] = {"Obtenu : ", items_texts[objet.type], " (", "", ")"};
+        if (objet.type == 15)
+            str[3] = cards_texts[objet.value];
+        else
+        {
+            char number[21];
+            int_to_str(number, objet.value, 1);
+            str[3] = number;
+        }
+        concat_str(message, str, 300, 5);
+    }
+    else
+    {
+        const char* str[2] = {"Obtenu : ", items_texts[objet.type]};
+        concat_str(message, str, 300, 2);
+    }
+    add_notification(message);
+}
+
+void display_notifications()
+{
+    int i = 0;
+    int y = 0;
+    while (i < 10)
+    {
+        if (notifs[i].delay > 0)
+        {
+            print_notif(notifs[i], y * 30);
+            notifs[i].delay--;
+            y++;
+        }
+        i++;
+    }
+    order_notifications();
 }
 
 char is_in_map(int x, int y, int map, int zone)
@@ -116,7 +205,7 @@ struct item get_front_item(struct position p_player)
     return project_data.zones[p_player.zone - 1].maps[p_player.map].items[x][y];
 }
 
-void complete_front_item(struct position p_player)
+void delete_front_item(struct position p_player)
 {
     if (!is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
         return;
@@ -154,8 +243,11 @@ void take_item(struct position p, int player)
         if (found)
         {
             project_data.inventories[player][i] = objet;
+            add_item_notification(objet);
             project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
         }
+        else
+            add_notification("Pas de place...");
     }
     update_perception(player);
 }
@@ -197,7 +289,12 @@ void take_item_in_container(struct position p, int player)
         if (found)
         {
             add_item(project_data.containers[project_data.inventories[player][i].ID], objet);
+            add_item_notification(objet);
             project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
+        }
+        else
+        {
+            add_notification("Pas de quoi ranger cet objet.");
         }
     }
 }
@@ -225,7 +322,12 @@ void take_card(struct position p, int player)
             if (found)
             {
                 project_data.containers[project_data.inventories[player][i].ID].items[objet.value - 1] = objet;
+                add_item_notification(objet);
                 project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
+            }
+            else
+            {
+                add_notification("Pas de quoi ranger cet objet.");
             }
         }
     }
@@ -322,6 +424,22 @@ char has_key(int value)
     return found;
 }
 
+char has_item(int value)
+{
+    int i = 0;
+    char found = 0;
+    //print_error_int(necessary_container);
+    while (i < 40 && !found)
+    {
+        if (project_data.inventories[player][i].type == value)
+        {
+            found = 1;
+        }
+        i++;
+    }
+    return found;
+}
+
 void update_knowledge(int player)
 {
     struct position p = project_data.character_positions[player];
@@ -376,6 +494,8 @@ void main_loop()
         update_knowledge(player);
         p_player = project_data.character_positions[player];
         display_current_screen(p_player);
+        display_notifications();
+        print_refresh();
         load_input();
         p_player = project_data.character_positions[player];
         if (inputs[0])
@@ -411,19 +531,11 @@ void main_loop()
                             p_player.y = project_data.zones[1].maps[objet.value - 1].y_start * 8;
                             map_changed = 1;
                             save_data.knowledge[player].zones[p_player.zone - 1].maps[p_player.map].has_map = 1;
-                            print_error_int(player);
-                            print_error_int(p_player.zone - 1);
-                            print_error_int(p_player.map);
-                            print_error_int(save_data.knowledge[0].zones[1].maps[0].has_map);
                         }
                     }
                     else
-                    {
                         take_item_in_container(p_player, player);
-                    }
                 }
-                if (objet.type == 14)
-                    take_item_in_container(p_player, player);
                 if (objet.type == 14)
                     take_item_in_container(p_player, player);
                 if (objet.type == 15)
@@ -463,8 +575,29 @@ void main_loop()
                     in_motion = 0;
                     if (first_move)
                     {
-                        if (has_key(objet.value))
-                            complete_front_item(p_player);
+                        if (has_item(9))
+                        {
+                            char number[21] = {0};
+                            int_to_str(number, objet.value, 1);
+                            const char* strs[4] = {"Un Sceau de categorie ", number, " bloque le passage.\n", "Mais vous n'avez pas la Cle necessaire pour\nle supprimer..."};
+                            char str[301] = {0};
+                            if (has_key(objet.value))
+                            {
+                                strs[3] = "Lever le Sceau ?";
+                                concat_str(str, strs, 300, 4);
+                                char* options[2] = {"Non", "Oui"};
+                                if (ask_question(str, options, 2) == 1)
+                                    delete_front_item(p_player);
+                            }
+                            else
+                            {
+                                concat_str(str, strs, 300, 4);
+                                display_message(str);
+                            }
+                            
+                        }
+                        else
+                            display_message("Un Sceau bloque le passage.");
                     }
                 }
             }
@@ -584,6 +717,12 @@ void launch_game(char with_save, int save_spot)
         return;
     }
     int i = 0;
+    while (i < 10)
+    {
+        notifs[i].delay = 0;
+        i++;
+    }
+    i=0;
     backup_data.zones = malloc(sizeof(struct zone_backup) * project_data.parameters[11]);
     char valid = backup_data.zones != NULL;
     while (i < project_data.parameters[11] && valid)

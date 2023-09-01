@@ -9,6 +9,14 @@ struct savedatas save_data;
 struct backup backup_data;
 char perception[10][5];
 
+struct notification
+{
+    char message[301];
+    int delay;
+};
+
+struct notification notifs[10];
+
 struct position
 {
     int zone; //0 : In an inventory/Undefined

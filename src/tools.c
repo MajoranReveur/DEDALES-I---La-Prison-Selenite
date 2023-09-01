@@ -29,7 +29,7 @@ void int_to_str(char* str, int value, int to_fill)
 		while (length)
 		{
 			length--;
-			str[length] = value % 10 + 48;
+			str[length] = value % 10 + '0';
 			value /= 10;
 		}
 	}
