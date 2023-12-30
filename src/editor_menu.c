@@ -260,19 +260,19 @@ void inventory_editor(int character)
     {
         int i = 0;
         rect(0, 0, 1104, 704, 0, 0, 0);
-        while (i < 10)
+        while (i < 8)
         {
             int j = 0;
             while (j < 5)
             {
                 rect( 5 + i * 70, 170 + j * 70, 64, 64, 100, 100, 100);
-                if (project_data.inventories[character][j * 10 + i].type)
-                    display_sprite(3, 5 + i * 70, 170 + j * 70, 64, project_data.inventories[character][j * 10 + i].type - 1, 0);
+                if (project_data.inventories[character][j * 8 + i].type)
+                    display_sprite(3, 5 + i * 70, 170 + j * 70, 64, project_data.inventories[character][j * 8 + i].type - 1, 0);
                 j++;
             }
             i++;
         }
-        struct item item = project_data.inventories[character][y * 10 + x];
+        struct item item = project_data.inventories[character][y * 8 + x];
         print_text_centered(704, 200, "Type :", 1, 1, 400);
         print_text_centered(704, 220, items_texts[item.type], 1, 1, 400);
         int type = item.type;
@@ -360,8 +360,8 @@ void inventory_editor(int character)
             if (x >= 0 && x < 10 && y >= 0 && y < 5)
             {
                 struct position p = {0, character, x, y};
-                modify_item(&item, p, 0);
-                project_data.inventories[character][y * 10 + x] = item;
+                modify_item(&item, p, 1);
+                project_data.inventories[character][y * 8 + x] = item;
             }
         }
         if (inputs[1] && y > 0)
@@ -370,7 +370,7 @@ void inventory_editor(int character)
             y++;
         if (inputs[3] && x > 0)
             x--;
-        if (inputs[4] && x < 9)
+        if (inputs[4] && x < 7)
             x++;
     }
     clean_inputs();
@@ -379,7 +379,7 @@ void inventory_editor(int character)
 void character_editor(int character)
 {
     char quit = 0;
-    char* character_names[] = {"Nihil", "Sarah", "Emma", "Mathias", "Saihtam"};
+    char* character_names[] = {"Nihil", "Sarah", "Mathias", "Saihtam", "Emma"};
     while(!inputs[0] && !quit)
     {
         int i = 0;
@@ -413,6 +413,8 @@ void character_editor(int character)
                 position_choice_zone(&(project_data.character_positions[character]));
             if (i == 1)
                 inventory_editor(character);
+            if (i == 2)
+                request_character_editor(character);
             if (i == 3)
                 quit = 1;
         }
@@ -435,9 +437,9 @@ void character_menu()
             print_text_centered(704, 100, "- Personnages -", 1, 1, 400);
             print_text_centered(704, 200, "Nihil", 1, 1 + (i == 0), 400);
             print_text_centered(704, 250, "Sarah", 1, 1 + (i == 1), 400);
-            print_text_centered(704, 300, "Emma", 1, 1 + (i == 2), 400);
-            print_text_centered(704, 350, "Mathias", 1, 1 + (i == 3), 400);
-            print_text_centered(704, 400, "Saihtam", 1, 1 + (i == 4), 400);
+            print_text_centered(704, 350, "Mathias", 1, 1 + (i == 2), 400);
+            print_text_centered(704, 400, "Saihtam", 1, 1 + (i == 3), 400);
+            print_text_centered(704, 300, "Emma", 1, 1 + (i == 4), 400);
             print_text_centered(704, 450, "Retour", 1, 1 + (i == 5), 400);
             if (i < 5)
             {

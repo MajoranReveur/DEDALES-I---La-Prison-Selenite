@@ -63,6 +63,7 @@ void project_create()
         project_data.containers = NULL;
         project_data.modified = 1;
         project_data.valid = 0;
+        file_loaded = 1;
         project_menu();
     }
 }

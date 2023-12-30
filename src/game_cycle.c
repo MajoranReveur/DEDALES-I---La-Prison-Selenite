@@ -33,6 +33,72 @@ void update_perception(int player)
     }
 }
 
+void update_request_positions()
+{    
+    int i = 0;
+    while (i < 5)
+    {
+        int character = i;
+        if (character == 4)
+        {
+            if (project_data.character_positions[player].zone == 1)
+                character = 4 + project_data.character_positions[player].map;
+            if (project_data.character_positions[player].zone == 5)
+                character = 4 + project_data.character_positions[player].map + project_data.zones[0].map_number;
+        }
+        if (save_data.request_states[character].active && character != player)
+        {
+            struct position p = project_data.requests[character][save_data.request_states[character].value].objective.p;
+            project_data.character_positions[character].map = p.map;
+            project_data.character_positions[character].zone = p.zone;
+            project_data.character_positions[character].x = p.x * 8;
+            project_data.character_positions[character].y = p.y * 8;
+            project_data.character_positions[character].orientation = p.orientation;
+        }
+        i++;
+    }
+}
+
+void update_active_requests()
+{
+    int i = 0;
+    while (i < 4 + project_data.zones[0].map_number + project_data.zones[4].map_number)
+    {
+        if (!save_data.request_states[i].active)
+        {
+            //print_error("Found free request :");
+            //print_error_int(i);
+            int j = 0;
+            int character = i;
+            if (i >= 4)
+                character = 4;
+            int zone = 1;
+            int map = i - 4;
+            if (i >= 4 + project_data.zones[0].map_number)
+            {
+                zone = 5;
+                map = i - 4 - project_data.zones[0].map_number;
+            }
+            char found = 0;
+            while (j < project_data.parameters[5 + character] && !found)
+            {
+                if (project_data.requests[character][j].objective.activated)
+                {
+                    if (character != 4 || (zone == project_data.requests[character][j].objective.p.zone && map == project_data.requests[character][j].objective.p.map))
+                    {
+                        save_data.request_states[i].active = 1;
+                        save_data.request_states[i].value = j;
+                        found = 1;
+                    }
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+    update_request_positions();
+}
+
 void display_current_screen(struct position camera)
 {
     rect(0, 0, 704, 704, 0, 0, 0);
@@ -44,13 +110,12 @@ void display_current_screen(struct position camera)
             display_map_items(camera.x - 40, camera.y - 40, project_data.zones[camera.zone - 1].maps[camera.map], player);
         }
         display_map_characters(camera.x - 40, camera.y - 40, camera.map, camera.zone);
-        if (camera.zone == 1 || camera.zone == 5)
+        if (camera.zone != 1 || camera.zone == 5)
             display_map_shadow_character(camera.x - 40, camera.y - 40, camera.map, camera.zone, player);
         display_sprite(4, (project_data.character_positions[player].x - camera.x + 40) * 8,  (project_data.character_positions[player].y - camera.y + 40) * 8 - 16, 
         64, player * 4 + project_data.character_positions[player].orientation, project_data.character_positions[player].x % 8 + project_data.character_positions[player].y % 8);
     }
 }
-
 
 void order_notifications()
 {
@@ -226,33 +291,276 @@ void delete_front_item(struct position p_player)
     project_data.zones[p_player.zone - 1].maps[p_player.map].items[x][y].type = 0;
 }
 
-void take_item(struct position p, int player)
+struct item get_item_from_request(struct request r)
 {
-    if (is_in_map(p.x / 8, p.y / 8, p.map, p.zone))
-    {
-        struct item objet = project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8];
-        int i = 0;
-        char found = 0;
-        while (i < 40 && !found)
-        {
-            if (project_data.inventories[player][i].type)
-                i++;
-            else
-                found = 1;
-        }
-        if (found)
-        {
-            project_data.inventories[player][i] = objet;
-            add_item_notification(objet);
-            project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
-        }
-        else
-            add_notification("Pas de place...");
-    }
-    update_perception(player);
+    struct item objet;
+    objet.activation = r.objective.value1 % 2;
+    objet.type = r.objective.value1 / 2;
+    objet.ID = r.objective.value2;
+    objet.value = r.objective.value3;
+    return objet;
 }
 
-void take_item_in_container(struct position p, int player)
+char can_take_card(int character, int card_type, int quantity)
+{
+    int i = 0;
+    int found = 0;
+    while (i < 40)
+    {
+        if (project_data.inventories[character][i].type == 8)
+        {
+            if (project_data.containers[project_data.inventories[character][i].ID].items[card_type - 1].type == 0)
+                found++;
+        }
+        i++;
+    }
+    return found >= quantity;
+}
+
+char can_take_item_in_container(int character, int container_type, int quantity)
+{
+    int i = 0;
+    int found = 0;
+    while (i < 40 && found < quantity)
+    {
+        if (project_data.inventories[character][i].type == container_type)
+        {
+            int j = 0;
+            while (j < project_data.containers[project_data.inventories[character][i].ID].size && found < quantity)
+            {
+                if (project_data.containers[project_data.inventories[character][i].ID].items[j].type == 0)
+                    found++;
+                j++;
+            }
+        }
+        i++;
+    }
+    return found >= quantity;
+}
+
+char can_take_item(int character, struct item objet, int quantity)
+{
+    if (objet.type == 15)
+        return (can_take_card(character, objet.value, quantity));
+    if (objet.type == 14)
+        return (can_take_item_in_container(character, 7, quantity));
+    if (objet.type == 16)
+        return (can_take_item_in_container(character, 9, quantity));
+    int i = 0;
+    int found = 0;
+    while (i < 40)
+    {
+        if (!project_data.inventories[character][i].type)
+            found++;
+        i++;
+    }
+    return found >= quantity;
+}
+
+char is_item_matching(struct item i1, struct item i2)
+{
+    //print_error("matching?");
+    //print_error_int(i1.type);
+    //print_error_int(i2.type);
+    if (i1.type != i2.type)
+        return 0;
+    //print_error("yep !");
+    return 1;
+}
+
+char has_item_in_container(int character, int container_type, struct item objet, int quantity)
+{
+    int i = 0;
+    int found = 0;
+    //print_error("searching for...");
+    //print_error_int(container_type);
+    //print_error_int(quantity);
+    while (i < 40 && found < quantity)
+    {
+        if (project_data.inventories[character][i].type == container_type)
+        {
+            //print_error("found one !");
+            int j = 0;
+            while (j < project_data.containers[project_data.inventories[character][i].ID].size && found < quantity)
+            {
+                if (is_item_matching(project_data.containers[project_data.inventories[character][i].ID].items[j], objet))
+                    found++;
+                j++;
+            }
+        }
+        i++;
+    }
+    //if (found >= quantity)
+    //    print_error("All good there !");
+    return (found >= quantity);
+}
+
+char has_item(int character, struct item objet, int quantity)
+{
+    if (objet.type == 15 && has_item_in_container(character, 8, objet, quantity))
+        return 1;
+    if (objet.type == 14 && has_item_in_container(character, 7, objet, quantity))
+        return 1;
+    if (objet.type == 16 && has_item_in_container(character, 9, objet, quantity))
+        return 1;
+    int i = 0;
+    int found = 0;
+    while (i < 40)
+    {
+        if (is_item_matching(project_data.inventories[character][i], objet))
+            found++;
+        i++;
+    }
+    return (found >= quantity);
+}
+
+struct item drop_item_in_container(int character, int container_type, struct item objet)
+{
+    int i = 0;
+    int found = 0;
+    while (i < 40)
+    {
+        if (project_data.inventories[character][i].type == container_type)
+        {
+            int j = 0;
+            while (j < project_data.containers[project_data.inventories[character][i].ID].size)
+            {
+                if (is_item_matching(project_data.containers[project_data.inventories[character][i].ID].items[j], objet))
+                {
+                    struct item result = project_data.containers[project_data.inventories[character][i].ID].items[j];
+                    if (container_type == 8)
+                        project_data.containers[project_data.inventories[character][i].ID].items[j].type = 0;
+                    else
+                        remove_item(project_data.containers[project_data.inventories[character][i].ID], result.value);
+                    return result;
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+    return objet; //SHOULD NEVER HAPPEN
+}
+
+struct item drop_item(int character, struct item objet)
+{
+    if (objet.type == 15 && has_item_in_container(character, 8, objet, 1))
+        return (drop_item_in_container(character, 8, objet));
+    if (objet.type == 14 && has_item_in_container(character, 7, objet, 1))
+        return (drop_item_in_container(character, 7, objet));
+    if (objet.type == 16 && has_item_in_container(character, 9, objet, 1))
+        return (drop_item_in_container(character, 9, objet));
+    int i = 0;
+    while (i < 40)
+    {
+        if (is_item_matching(project_data.inventories[character][i], objet))
+        {
+            struct item result = project_data.inventories[character][i];
+            project_data.inventories[character][i].type = 0;
+            print_error("drop :");
+            print_error_int(i);
+            return result;
+        }
+        i++;
+    }
+    return objet; // SHOULD NEVER HAPPEN
+}
+
+char has_item_request(int character, struct request r)
+{
+    struct item objet = get_item_from_request(r);
+    return has_item(player, objet, r.objective.value4);
+}
+
+char has_key(int value)
+{
+    struct item key;
+    key.type = 16;
+    key.value = value;
+    key.activation = 0;
+    key.ID = 0;
+    return has_item(player, key, 1);
+}
+
+char has_item_type(int type)
+{
+    struct item objet;
+    objet.type = type;
+    objet.value = 0;
+    objet.activation = 0;
+    objet.ID = 0;
+    return has_item(player, objet, 1);
+}
+
+void take_card(int character, struct item objet)
+{
+    int i = 0;
+    while (i < 40)
+    {
+        if (project_data.inventories[character][i].type == 8)
+        {
+            if (project_data.containers[project_data.inventories[character][i].ID].items[objet.value - 1].type == 0)
+            {
+                project_data.containers[project_data.inventories[character][i].ID].items[objet.value - 1] = objet;
+                return;
+            }
+        }
+        i++;
+    }
+}
+
+void take_item_in_container(int character, int container_type, struct item objet)
+{
+    int i = 0;
+    while (i < 40)
+    {
+        if (project_data.inventories[character][i].type == container_type)
+        {
+            int j = 0;
+            while (j < project_data.containers[project_data.inventories[character][i].ID].size)
+            {
+                if (project_data.containers[project_data.inventories[character][i].ID].items[j].type == 0)
+                {
+                    add_item(project_data.containers[project_data.inventories[character][i].ID], objet);
+                    return;
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+}
+
+void take_item(int character, struct item objet)
+{
+    if (objet.type == 15)
+    {
+        take_card(character, objet);
+        return;
+    }
+    if (objet.type == 14)
+    {
+        take_item_in_container(character, 7, objet);
+        return;
+    }
+    if (objet.type == 16)
+    {
+        take_item_in_container(character, 9, objet);
+        return;
+    }
+    int i = 0;
+    while (i < 40)
+    {
+        if (!project_data.inventories[character][i].type)
+        {
+            project_data.inventories[player][i] = objet;
+            return;
+        }
+        i++;
+    }
+}
+
+void take_item_position(struct position p, int character)
 {
     if (is_in_map(p.x / 8, p.y / 8, p.map, p.zone))
     {
@@ -262,75 +570,16 @@ void take_item_in_container(struct position p, int player)
             objet.value = p.map + 1;
             project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8] = objet;
         }
-        int necessary_container = 0;
-        if (objet.type == 16)
-            necessary_container = 9;
-        if (objet.type == 14)
-            necessary_container = 7;
-        int i = 0;
-        char found = 0;
-        //print_error_int(necessary_container);
-        while (i < 40 && !found && necessary_container)
+        if (can_take_item(character, objet, 1))
         {
-            if (project_data.inventories[player][i].type == necessary_container)
-            {
-                //print_error("found");
-                int j = 0;
-                while (j < project_data.containers[project_data.inventories[player][i].ID].size)
-                {
-                    if (project_data.containers[project_data.inventories[player][i].ID].items[j].type == 0)
-                        found = 1;
-                    j++;
-                }
-            }
-            if (!found)
-                i++;
-        }
-        if (found)
-        {
-            add_item(project_data.containers[project_data.inventories[player][i].ID], objet);
-            add_item_notification(objet);
+            take_item(character, objet);
             project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
+            add_item_notification(objet);
         }
         else
-        {
-            add_notification("Pas de quoi ranger cet objet.");
-        }
+            add_notification("Pas de place...");
     }
-}
-
-void take_card(struct position p, int player)
-{
-    if (is_in_map(p.x / 8, p.y / 8, p.map, p.zone))
-    {
-        struct item objet = project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8];
-        if (objet.type == 15 && objet.value)
-        {
-            int i = 0;
-            char found = 0;
-            //print_error_int(necessary_container);
-            while (i < 40 && !found)
-            {
-                if (project_data.inventories[player][i].type == 8)
-                {
-                    if (project_data.containers[project_data.inventories[player][i].ID].items[objet.value - 1].type == 0)
-                        found = 1;
-                }
-                if (!found)
-                    i++;
-            }
-            if (found)
-            {
-                project_data.containers[project_data.inventories[player][i].ID].items[objet.value - 1] = objet;
-                add_item_notification(objet);
-                project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
-            }
-            else
-            {
-                add_notification("Pas de quoi ranger cet objet.");
-            }
-        }
-    }
+    update_perception(player);
 }
 
 void reboot_portal(int zone, int map, int player)
@@ -400,46 +649,6 @@ void quit_portal(int zone, int map, int player)
     }
 }
 
-char has_key(int value)
-{
-    int i = 0;
-    char found = 0;
-    //print_error_int(necessary_container);
-    while (i < 40 && !found)
-    {
-        if (project_data.inventories[player][i].type == 9)
-        {
-            //print_error("found");
-            int j = 0;
-            while (j < project_data.containers[project_data.inventories[player][i].ID].size)
-            {
-                if (project_data.containers[project_data.inventories[player][i].ID].items[j].type == 16 
-                && project_data.containers[project_data.inventories[player][i].ID].items[j].value == value)
-                    found = 1;
-                j++;
-            }
-        }
-        i++;
-    }
-    return found;
-}
-
-char has_item(int value)
-{
-    int i = 0;
-    char found = 0;
-    //print_error_int(necessary_container);
-    while (i < 40 && !found)
-    {
-        if (project_data.inventories[player][i].type == value)
-        {
-            found = 1;
-        }
-        i++;
-    }
-    return found;
-}
-
 void update_knowledge(int player)
 {
     struct position p = project_data.character_positions[player];
@@ -479,8 +688,86 @@ void reload_with_character(int character)
 {
     player = character;
     update_perception(player);
+    update_request_positions();
     in_motion = 0;
     map_changed = 1;
+}
+
+void get_item_description(struct request r, char* str)
+{
+    char number[21] = {0};
+    int_to_str(number, r.objective.value4, 0);
+    char* str_fields[3] = {items_texts[r.objective.value1 / 2], " x ", number};
+    concat_str(str, str_fields, 200, 3);
+}
+
+void dealing_with_request(int character, int value)
+{
+    struct request r = project_data.requests[character][value];
+    char success = 0;
+    if (r.objective.type == 0)
+    {
+        display_message("Petite discussion.");
+        success = 1;
+    }
+    if (r.objective.type == 1)
+        display_message("Montre moi...");
+    if (r.objective.type == 2)
+        display_message("Donne moi...");
+    if (r.objective.type == 1 || r.objective.type == 2)
+    {
+        char item_desc[201] = {0};
+        get_item_description(r, item_desc);
+        char item_str[201] = {0};
+        char* str[2] = {"Objet : ", item_desc};
+        concat_str(item_str, str, 200, 2);
+        display_message(item_str);
+        if (has_item_request(player, r))
+        {
+            if (r.objective.type == 1)
+                success = 1;
+            if (r.objective.type == 2)
+            {
+                print_error("Try to get it !");
+                struct item objet = get_item_from_request(r);
+                if (can_take_item(character, objet, 1))
+                {
+                    objet = drop_item(player, objet);
+                    take_item(character, objet);
+                    success = 1;
+                }
+            }
+            if (success)
+                display_message("Requete faisable.");
+        }
+    }
+    if (success)
+    {
+        print_error_int(character);
+        print_error_int(project_data.character_positions[player].zone);
+        project_data.requests[character][value].objective.activated = 0;
+        if (character == 4)
+        {
+            if (project_data.character_positions[player].zone == 1)
+                character = 4 + project_data.character_positions[player].map;
+            if (project_data.character_positions[player].zone == 5)
+                character = 4 + project_data.character_positions[player].map + project_data.zones[0].map_number;
+        }
+        print_error_int(character);
+        save_data.request_states[character].active = 0;
+        update_active_requests();
+        
+        if (r.reward.type && has_item(character, r.reward, 1))
+        {
+            print_error("reward");
+            if (can_take_item(player, r.reward, 1))
+            {
+                struct item objet = drop_item(character, r.reward);
+                take_item(player, objet);
+                add_item_notification(objet);
+            }
+        }
+    }
 }
 
 void main_loop()
@@ -515,7 +802,7 @@ void main_loop()
                     p_player.map++;
                     map_changed = 1;
                 }
-                if (objet.type == 16)
+                if (objet.type == 16 && has_item_type(9))
                 {
                     if (!objet.activation)
                     {
@@ -534,16 +821,10 @@ void main_loop()
                         }
                     }
                     else
-                        take_item_in_container(p_player, player);
+                        take_item_position(p_player, player);
                 }
-                if (objet.type == 14)
-                    take_item_in_container(p_player, player);
-                if (objet.type == 15)
-                    take_card(p_player, player);
-                if (objet.type >= 7 && objet.type <= 13)
-                {
-                    take_item(p_player, player);
-                }
+                if ((objet.type >= 7 && objet.type <= 15) || objet.type == 21)
+                    take_item_position(p_player, player);
             }
         }
         if (!in_motion && !map_changed)
@@ -575,7 +856,7 @@ void main_loop()
                     in_motion = 0;
                     if (first_move)
                     {
-                        if (has_item(9))
+                        if (has_item_type(9))
                         {
                             char number[21] = {0};
                             int_to_str(number, objet.value, 1);
@@ -600,6 +881,49 @@ void main_loop()
                             display_message("Un Sceau bloque le passage.");
                     }
                 }
+                if (objet.type == 4 || objet.type == 5)
+                    in_motion = 0;
+            }
+        }
+        if (in_motion && first_move)
+        {
+            int i = 0;
+            while (i < 5)
+            {
+                int character = i;
+                if (character == 4)
+                {
+                    if (project_data.character_positions[player].zone == 1)
+                        character = 4 + project_data.character_positions[player].map;
+                    if (project_data.character_positions[player].zone == 5)
+                        character = 4 + project_data.character_positions[player].map + project_data.zones[0].map_number;
+                }
+                if (save_data.request_states[character].active)
+                {
+                    struct request r = project_data.requests[i][save_data.request_states[character].value];
+                    if (r.objective.p.zone == project_data.character_positions[player].zone &&
+                        r.objective.p.map == project_data.character_positions[player].map)
+                    {
+                        int dx = 0;
+                        int dy = 0;
+                        if (p_player.orientation == 1)
+                            dy = -1;
+                        if (p_player.orientation == 0)
+                            dy = 1;
+                        if (p_player.orientation == 2)
+                            dx = -1;
+                        if (p_player.orientation == 3)
+                            dx = 1;
+                        int x = p_player.x / 8 + dx;
+                        int y = p_player.y / 8 + dy;
+                        if (r.objective.p.x == x && r.objective.p.y == y)
+                        {
+                            dealing_with_request(i, save_data.request_states[character].value);
+                            in_motion = 0;
+                        }
+                    }
+                }
+                i++;
             }
         }
         first_move = 0;
@@ -620,6 +944,7 @@ void main_loop()
                 i++;
             }
             map_changed = 0;
+            update_request_positions();
             int cell = get_current_cell(p_player);
             if (cell >= 3 && cell <= 6)
                 in_motion = 1;
@@ -687,19 +1012,19 @@ void main_loop()
             }
             if (!in_motion && p_player.zone == 2 && project_data.zones[p_player.zone - 1].maps[p_player.map].remaining_green_cells == 0)
             {
-                print_error("Wait");
+                //print_error("Wait");
                 struct position p = save_data.portals[player].portal_position;
-                print_error_int(p.zone);
-                print_error_int(p.map);
-                print_error_int(p.x);
-                print_error_int(p.y);
+                //print_error_int(p.zone);
+                //print_error_int(p.map);
+                //print_error_int(p.x);
+                //print_error_int(p.y);
                 project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].activation = 1;
-                print_error_int(4);
+                //print_error_int(4);
                 project_data.character_positions[player] = p_player;
-                print_error_int(5);
+                //print_error_int(5);
                 quit_portal(p_player.zone, p_player.map, player);
                 p_player = project_data.character_positions[player];
-                print_error_int(6);
+                //print_error_int(6);
                 map_changed = 1;
             }
         }
@@ -807,14 +1132,19 @@ void launch_game(char with_save, int save_spot)
     }
     print_error("Start !");
     player = project_data.parameters[4];
-    map_changed = 0;
+    map_changed = 1;
     if (with_save)
     {
         if (open_save(save_spot))
+        {
             main_loop();
+        }
     }
     else
+    {
+        update_active_requests();
         main_loop();
+    }
     free_backup();
     free_save_data(save_data);
 }

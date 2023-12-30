@@ -210,8 +210,8 @@ const time_t get_date(int spot)
     return 0;
 }
 
-char projecttitles[301][10];
-char authornames[101][10];
+char projecttitles[10][301];
+char authornames[10][101];
 
 void get_game_info(int spot, int* players)
 {
@@ -237,12 +237,13 @@ void get_game_info(int spot, int* players)
 		i++;
 		c = fgetc(file);
 	}
+	projecttitles[spot][i] = 0;
+	print_error(projecttitles[spot]);
 	if (c != '\n')
 	{
     	fclose(file);
 		return;
 	}
-	projecttitles[spot][i] = 0;
 	c = fgetc(file);
 	i = 0;
 	while (i < 300 && c != '\n' && c != EOF)

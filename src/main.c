@@ -14,10 +14,10 @@ extern char file_saved;
 extern char** main_menu_texts;
 int main(int argc, char** argv)
 {
-	software_mode = 1;
+	software_mode = 1; //0 for editor, 1 for game
 	file_loaded = 0;
 	file_saved = 1;
-	default_inputs(); //0 for editor, 1 for game
+	default_inputs();
 	if (!language_load("francais", 1))
 		return 0;
 	update_texts();

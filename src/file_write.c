@@ -82,18 +82,23 @@ void write_container_list(struct container *list, long size) //Size is the maxim
     fputc('\n', file);
 }
 
+void write_mission(struct mission m)
+{
+    write_int(m.type);
+    write_position(m.p);
+    write_position(m.tp);
+    write_int(m.value1);
+    write_int(m.value2);
+    write_int(m.value3);
+    write_int(m.value4);
+    write_int(m.activated);
+    fputc('\n', file);
+}
+
 void write_request(struct request r)
 {
-    write_int(r.type);
-    write_int(r.orientation);
-    write_int(r.item_quantity);
-    write_int(r.vision_field);
-    write_int(r.wanted_character);
-    write_int(r.active);
-    write_position(r.place);
-    write_position(r.destination);
-    write_item(r.item_wanted);
-    write_item(r.reward_item);
+    write_mission(r.objective);
+    write_item(r.reward);
     fputc('\n', file);
 }
 
@@ -198,10 +203,29 @@ void write_project(struct project p)
     {
         write_position(p.character_positions[i]);
         write_request_list(p.requests[i], p.parameters[i + 5]);
-        write_item_list(p.inventories[i], 50);
+        write_item_list(p.inventories[i], 40);
         i++;
     }
     write_container_list(p.containers, p.parameters[10]);
+}
+
+void write_request_state(struct request_state r)
+{
+    write_int(r.active);
+    write_int(r.value);
+    fputc('\n', file);
+}
+
+void write_request_state_list()
+{
+    int size = 4 + project_data.zones[0].map_number + project_data.zones[4].map_number;
+    int i = 0;
+    while (i < size)
+    {
+        write_request_state(save_data.request_states[i]);
+        i++;
+    }
+    fputc('\n', file);
 }
 
 void write_save_data()
@@ -214,7 +238,7 @@ void write_save_data()
         write_portal(save_data.portals[i]);
         write_knowledge(i);
         write_position(project_data.character_positions[i]);
-        write_item_list(project_data.inventories[i], 50);
+        write_item_list(project_data.inventories[i], 40);
         i++;
     }
     i = 0;
@@ -225,6 +249,13 @@ void write_save_data()
     }
     write_position(save_data.sleep_target);
     write_container_list(project_data.containers, project_data.parameters[10]);
+    write_request_state_list();
+    i = 0;
+    while (i < 5)
+    {
+        write_request_list(project_data.requests[i], project_data.parameters[i + 5]);
+        i++;
+    }
 }
 
 char save_project(struct project p)

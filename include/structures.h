@@ -41,20 +41,6 @@ struct container
     int size;
 };
 
-struct request
-{
-    struct position place; //For spawn : it can be change via cinematics (for Emma it is reinitialized at each map change)
-    int orientation;
-    int type; //0 - Talking, 1 - Show an item, 2 - Give an item, 3 - Surprise
-    struct position destination; //For surprise requests
-    struct item item_wanted; //For item requests
-    int item_quantity; //For item requests
-    char vision_field; //0 - Straight forward, 1 - On lines and rows, 2 - Diagonals
-    struct item reward_item; //For containers : those who contains Candies, Dreams and Keys can only be empty
-    int wanted_character; //0 : Everybody can do it
-    char active; //True if it is efficient. If a playable character has an active request, it'll take effect as soon as the player choose another character (the character is no more playable then)
-};
-
 /*
 Project parameters :
 0 - Needed cinematics ?
@@ -70,6 +56,11 @@ Project parameters :
 10 - Number of containers items
 11 - Number of zones (cannot be less than 5)
 */
+
+struct event_map
+{
+    long** cells;
+};
 
 struct portal
 {
@@ -109,6 +100,50 @@ struct zone_knowledge
 struct character_knowledge
 {
     struct zone_knowledge *zones;
+};
+
+struct text
+{
+    int length;
+    char* string;
+};
+
+struct mission
+{
+    int type;
+    struct position p;
+    struct position tp;
+    int value1;
+    int value2;
+    int value3;
+    int value4;
+    char activated;
+    struct text password;
+};
+
+struct request
+{
+    struct mission objective;
+    struct item reward;
+};
+
+struct cinematic_event
+{
+    int type;
+    struct text dialog;
+    int value1;
+    int value2;
+    int value3;
+    int value4;
+    char condition;
+    struct position p;
+    struct position target;
+};
+
+struct cinematic
+{
+    int length;
+    struct cinematic_event* events;
 };
 
 struct request_state
@@ -153,7 +188,7 @@ struct project
 	int parameters[12];
     struct position character_positions[5]; //First positions of each character
 	struct request *requests[5]; //Requests for each of the 5 characters
-    struct item inventories[50][5]; //Inventories for each of the 5 characters
+    struct item inventories[5][40]; //Inventories for each of the 5 characters
     struct container *containers; //Content of items which have other items inside
 	struct zone *zones; //Different zones
 	char modified; //True if the project has been modified since the last save

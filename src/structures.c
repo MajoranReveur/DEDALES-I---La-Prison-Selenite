@@ -127,6 +127,12 @@ void free_project(struct project p)
     int i = 0;
     while (i < 5)
     {
+        int j = 0;
+        while (j < p.parameters[i + 5])
+        {
+            free(p.requests[i][j].objective.password.string);
+            j++;
+        }
         free(p.requests[i]);
         i++;
     }
@@ -174,8 +180,6 @@ void delete_container(long ID)
     //print_error("Delete succeeded");
 }
 
-
-// Commentaires be like POF
 void add_item(struct container container, struct item o)
 {
     int j = 0;
@@ -216,6 +220,16 @@ char allocate_knowledge(struct savedatas *s)
 {
     int perso = 0;
     char valid = 1;
+    s->request_states = malloc(sizeof(struct request_state) * (4 + project_data.zones[0].map_number + project_data.zones[4].map_number));
+    if (s->request_states == NULL)
+        return 0;
+    int i = 0;
+    while (i < 4 + project_data.zones[0].map_number + project_data.zones[4].map_number)
+    {
+        s->request_states[i].active = 0;
+        s->request_states[i].value = 0;
+        i++;
+    }
     while (perso < 5 && valid)
     {
         int i = 0;

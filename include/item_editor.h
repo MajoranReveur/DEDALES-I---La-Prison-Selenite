@@ -5,5 +5,5 @@
 #include "languages.h"
 #include "editor_menu.h"
 
-int item_choice(int type);
+int item_choice(int type, char mode);
 void modify_item(struct item *item, struct position p, char mode);

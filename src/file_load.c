@@ -175,41 +175,73 @@ char load_container_list(struct container *list, long size)
     return check_endline();
 }
 
-char load_request(struct request *r)
+char load_text(struct text *t)
+{
+    int value = 0;
+    if (!load_int(&value))
+        return 0;
+    t->length = value;
+    t->string = malloc(sizeof(char) * (value + 1));
+    if (t->string == NULL)
+        return 0;
+    char c = fgetc(file);
+    int i = 0;
+    while (c != 0 && c != EOF && c != '\n' && i < value)
+    {
+        t->string[i] = c;
+        c = fgetc(file);
+        i++;
+    }
+    t->string[i] = 0;
+    if (c != '\n')
+        return 0;
+    return 1;
+}
+
+char load_mission(struct mission *m)
 {
     int value = 0;
     struct position p;
+    if (!load_int(&value))
+        return 0;
+    m->type = value;
+    if (!load_position(&p))
+        return 0;
+    m->p = p;
+    if (!load_position(&p))
+        return 0;
+    m->tp = p;
+    if (!load_int(&value))
+        return 0;
+    m->value1 = value;
+    if (!load_int(&value))
+        return 0;
+    m->value2 = value;
+    if (!load_int(&value))
+        return 0;
+    m->value3 = value;
+    if (!load_int(&value))
+        return 0;
+    m->value4 = value;
+    if (!load_int(&value))
+        return 0;
+    m->activated = value;
+    m->activated = 1;
+    m->password.length = 0;
+    m->password.string = NULL;
+    return check_endline();
+}
+
+char load_request(struct request *r)
+{
+    struct mission m;
     struct item i;
-    if (!load_int(&value))
+    if (!load_mission(&m))
         return 0;
-    r->type = value;
-    if (!load_int(&value))
-        return 0;
-    r->orientation = value;
-    if (!load_int(&value))
-        return 0;
-    r->item_quantity = value;
-    if (!load_int(&value))
-        return 0;
-    r->vision_field = value;
-    if (!load_int(&value))
-        return 0;
-    r->wanted_character = value;
-    if (!load_int(&value))
-        return 0;
-    r->active = value;
-    if (!load_position(&p))
-        return 0;
-    r->place = p;
-    if (!load_position(&p))
-        return 0;
-    r->destination = p;
+    r->objective = m;
     if (!load_item(&i))
         return 0;
-    r->item_wanted = i;
-    if (!load_item(&i))
-        return 0;
-    r->reward_item = i;
+    r->reward = i;
     return check_endline();
 }
 
@@ -422,6 +454,31 @@ char load_knowledge(struct character_knowledge *m)
     return check_endline() && valid;
 }
 
+char load_request_state(struct request_state *r)
+{
+    int value = 0;
+    if (!load_int(&value))
+        return 0;
+    r->active = value;
+    if (!load_int(&value))
+        return 0;
+    r->value = value;
+    return check_endline();
+}
+
+char load_request_state_list(struct request_state *r)
+{
+    int size = 4 + project_data.zones[0].map_number + project_data.zones[4].map_number;
+    int i = 0;
+    while (i < size)
+    {
+        if (!load_request_state(r + i))
+            return 0;
+        i++;
+    }
+    return check_endline();
+}
+
 char load_save()
 {
     char c = fgetc(file);
@@ -436,21 +493,81 @@ char load_save()
         return 0;
     struct project p;
     struct savedatas s;
-    int player = 0;
-    char valid = load_int(&player);
+    long i = 0;
+    while (i < 5)
+    {
+        p.requests[i] = NULL;
+        i++;
+    }
+    i = 0;
+    while (i < 12)
+    {
+        p.parameters[i] = project_data.parameters[i];
+        i++;
+    }
+    i = 0;
+    char valid = 1;
+    while (i < 5 && valid)
+    {
+        p.requests[i] = malloc(sizeof(struct request) * project_data.parameters[i + 5]);
+        valid = valid && (p.requests[i] != NULL);
+        if (valid)
+        {
+            int j = 0;
+            while (j < project_data.parameters[i + 5])
+            {
+                p.requests[i][j].objective.password.string = NULL;
+                j++;
+            }
+        }
+        i++; 
+    }
+    while (!valid && i)
+    {
+        i--;
+        free(p.requests[i]);
+    }
     if (!valid)
         return 0;
+    print_error("a");
+    int player = 0;
+    valid = load_int(&player);
+    if (!valid)
+    {
+        i = 0;
+        while (i < 5)
+        {
+            free(p.requests[i]);
+            i++;
+        }
+        return 0;
+    }
     s.request_states = NULL;
     valid = allocate_knowledge(&s);
     if (!valid)
+    {
+        i = 0;
+        while (i < 5)
+        {
+            free(p.requests[i]);
+            i++;
+        }
         return 0;
+    }
+    print_error("b");
     p.zones = malloc(sizeof(struct zone) * project_data.parameters[11]);
     if (p.zones == NULL)
     {
         free_save_data(s);
+        i = 0;
+        while (i < 5)
+        {
+            free(p.requests[i]);
+            i++;
+        }
         return 0;
     }
-    long i = 0;
+    i = 0;
     while (i < project_data.parameters[11])
     {
         p.zones[i].map_number = 0;
@@ -462,10 +579,17 @@ char load_save()
         p.containers = malloc(sizeof(struct container) * project_data.parameters[10]);
         valid = p.containers != NULL;
     }
+    print_error("c");
     if (!valid)
     {
         free(p.containers);
         free(p.zones);
+        i = 0;
+        while (i < 5)
+        {
+            free(p.requests[i]);
+            i++;
+        }
         return 0;
     }
     i = 0;
@@ -478,7 +602,6 @@ char load_save()
     struct position pos;
     while (i < 5 && valid)
     {
-        print_error_int(i);
         valid = load_portal(s.portals + i);
         if (valid)
             valid = load_knowledge(s.knowledge + i);
@@ -486,7 +609,7 @@ char load_save()
             valid = load_position(&pos);
         p.character_positions[i] = pos;
         if (valid)
-            valid = load_item_list(p.inventories[i], 50);
+            valid = load_item_list(p.inventories[i], 40);
         i++;
     }
     i = 0;
@@ -500,7 +623,16 @@ char load_save()
     s.sleep_target = pos;
     if (valid)
         valid = load_container_list(p.containers, project_data.parameters[10]);
+    if (valid)
+        valid = load_request_state_list(s.request_states);
+    i = 0;
+    while (i < 5 && valid)
+    {
+        valid = load_request_list(p.requests[i], project_data.parameters[5 + i]);
+        i++;
+    }
     valid = valid && (fgetc(file) == EOF);
+    print_error("d");
     if (!valid)
     {
         free_save_data(s);
@@ -509,19 +641,34 @@ char load_save()
     }
 
 
+    print_error("e");
     i = 0;
     while (i < 5)
     {
         save_data.portals[i] = s.portals[i];
         project_data.character_positions[i] = p.character_positions[i];
         int j = 0;
-        while (j < 50)
+        while (j < 40)
         {
             project_data.inventories[i][j] = p.inventories[i][j];
             j++;
         }
+        j = 0;
+        while (j < project_data.parameters[i + 5])
+        {
+            project_data.requests[i][j].objective.activated = p.requests[i][j].objective.activated;
+            j++;
+        }
         i++;
     }
+    print_error("f");
+    i = 0;
+    while (i < 4 + project_data.zones[0].map_number + project_data.zones[4].map_number)
+    {
+        save_data.request_states[i] = s.request_states[i];
+        i++;
+    }
+    print_error("g");
     i = 0;
     while (i < project_data.parameters[11])
     {
@@ -570,6 +717,11 @@ char load_save()
         i++;
     }
     reload_with_character(player);
+    print_error("h");
+    free_save_data(s);
+    print_error("i");
+    free_project(p);
+    print_error("j");
     return 1;
 }
 
@@ -589,11 +741,26 @@ char load_project(struct project *p)
         i++;
     }
     i = 0;
+    while (i < 5)
+    {
+        p->requests[i] = NULL;
+        i++;
+    }
+    i = 0;
     while (i < 5 && valid)
     {
         p->requests[i] = malloc(sizeof(struct request) * p->parameters[i + 5]);
         valid = valid && (p->requests[i] != NULL);
-        i++; 
+        if (valid)
+        {
+            int j = 0;
+            while (j < p->parameters[i + 5])
+            {
+                p->requests[i][j].objective.password.string = NULL;
+                j++;
+            }
+        }
+        i++;
     }
     while (i && !valid)
     {
@@ -607,16 +774,17 @@ char load_project(struct project *p)
     }
     p->containers = malloc(sizeof(struct container) * p->parameters[10]);
     valid = p->containers != NULL;
-    i = 0;
-    while (i < p->parameters[11])
-    {
-        i++;
-    }
     if (!valid)
     {
         i = 0;
         while (i < 5)
         {
+            int j = 0;
+            while (j < p->parameters[i + 5] && p->requests[i])
+            {
+                free(p->requests[i][j].objective.password.string);
+                j++;
+            }
             free(p->requests[i]);
             i++;
         }
@@ -643,9 +811,13 @@ char load_project(struct project *p)
         valid = load_position(&pos);
         p->character_positions[i] = pos;
         if (valid)
+        {
             valid = load_request_list(p->requests[i], p->parameters[i + 5]);
+        }
         if (valid)
-            valid = load_item_list(p->inventories[i], 50);
+        {
+            valid = load_item_list(p->inventories[i], 40);
+        }
         i++;
     }
     if (valid)
@@ -655,6 +827,7 @@ char load_project(struct project *p)
         free_project(*p);
         return 0;
     }
+    struct request r = project_data.requests[0][0];
     return (fgetc(file) == EOF);
 }
 
@@ -687,9 +860,8 @@ char open_project(struct project *p)
         file_loaded = 1;
         file_saved = 0;
         print_error("Projet charge !");
-        print_error_int(p->parameters[10]);
         return 1;
-    }
+    } 
     print_error("Mauvais format...");
     return 0;
 }

@@ -1,6 +1,11 @@
 #include "item_editor.h"
 
-int item_choice(int type)
+char is_requestable(int type)
+{
+    return (type == 0 || (type >= 6 && type != 22));
+}
+
+int item_choice(int type, char mode)
 {
     inputs[5] = 0;
     inputs[6] = 0;
@@ -20,6 +25,8 @@ int item_choice(int type)
                 if (x + y * 6 < 29)
                     rect(x * 80 + 112 + 8, y * 80 + 100 + 8, 64, 64, 100, 100, 100);
                 display_sprite(3, x * 80 + 112 + 8, y * 80 + 100 + 8, 64, x + y * 6 - 1, 0);
+                if (!is_requestable(x + y * 6) && mode > 0)
+                    rect_alpha(x * 80 + 112 + 8, y * 80 + 100 + 8, 64, 64, 100, 100, 100, 200);
                 x++;
             }
             y++;
@@ -37,6 +44,10 @@ int item_choice(int type)
             i--;
         if (inputs[4] && i < 5)
             i++;
+        if (inputs[5] && mode > 0)
+        {
+            inputs[5] = is_requestable(i + j * 6);
+        }
     }
     if (i + j * 6 < 29)
         return i + j * 6;
@@ -189,7 +200,7 @@ void card_choice(int *value)
 void change_type(struct item *item, struct position p, char mode)
 {
     int old_type = item->type;
-    item->type = item_choice(item->type);
+    item->type = item_choice(item->type, mode);
     char was_container = old_type >= 7 && old_type <= 13;
     char is_container = item->type >= 7 && item->type <= 13;
     if (old_type != item->type)
@@ -222,62 +233,67 @@ void change_type(struct item *item, struct position p, char mode)
                 }
             }
         }
-        if (was_container && !is_container)
+        if (mode < 2)
         {
-            delete_container(item->ID);
-            item->ID = 0;
-        }
-        if (!was_container && is_container)
-        {
-            struct item *list_for_cards = NULL;
-            if (item->type == 8)
-                list_for_cards = malloc(sizeof(struct item) * 23);
-            if (list_for_cards == NULL && item->type == 8)
+            if (was_container && !is_container)
             {
-                item->type = old_type;
-                print_error("Erreur : Memoire insuffisante.");
+                delete_container(item->ID);
+                item->ID = 0;
             }
-            else
+            if (!was_container && is_container)
             {
-                long new_ID = project_data.parameters[10];
-                struct container *new_list = realloc(project_data.containers, sizeof(struct container) * (new_ID + 1));
-                if (new_list == NULL)
+                struct item *list_for_cards = NULL;
+                if (item->type == 8)
+                    list_for_cards = malloc(sizeof(struct item) * 23);
+                if (list_for_cards == NULL && item->type == 8)
                 {
                     item->type = old_type;
                     print_error("Erreur : Memoire insuffisante.");
-                    print_error_int(new_ID);
                 }
                 else
                 {
-                    project_data.containers = new_list;
-                    project_data.parameters[10]++;
-                    item->ID = new_ID;
-                    item->value = 0;
-                    project_data.containers[new_ID].items = NULL;
-                    project_data.containers[new_ID].size = 0;
-                    project_data.containers[new_ID].position = p;
-                    if (item->type == 8)
+                    long new_ID = project_data.parameters[10];
+                    struct container *new_list = realloc(project_data.containers, sizeof(struct container) * (new_ID + 1));
+                    if (new_list == NULL)
                     {
-                        project_data.containers[new_ID].items = list_for_cards;
-                        project_data.containers[new_ID].size = 23;
-                        int j = 0;
-                        while (j < project_data.containers[item->ID].size)
+                        item->type = old_type;
+                        print_error("Erreur : Memoire insuffisante.");
+                        print_error_int(new_ID);
+                    }
+                    else
+                    {
+                        project_data.containers = new_list;
+                        project_data.parameters[10]++;
+                        item->ID = new_ID;
+                        item->value = 0;
+                        project_data.containers[new_ID].items = NULL;
+                        project_data.containers[new_ID].size = 0;
+                        project_data.containers[new_ID].position = p;
+                        if (item->type == 8)
                         {
-                            project_data.containers[item->ID].items[j].type = 0;
-                            project_data.containers[item->ID].items[j].value = 0;
-                            project_data.containers[item->ID].items[j].ID = 0;
-                            project_data.containers[item->ID].items[j].activation = 0;
-                            j++;
+                            project_data.containers[new_ID].items = list_for_cards;
+                            project_data.containers[new_ID].size = 23;
+                            int j = 0;
+                            while (j < project_data.containers[item->ID].size)
+                            {
+                                project_data.containers[item->ID].items[j].type = 0;
+                                project_data.containers[item->ID].items[j].value = 0;
+                                project_data.containers[item->ID].items[j].ID = 0;
+                                project_data.containers[item->ID].items[j].activation = 0;
+                                j++;
+                            }
                         }
                     }
                 }
             }
+            if (!is_container)
+            {
+                item->value = 0;
+                item->ID = 0;
+            }
         }
-        if (!is_container)
-        {
-            item->value = 0;
+        if (mode == 2)
             item->ID = 0;
-        }
         item->activation = 0;
         item->value = 0;
     }
@@ -493,12 +509,12 @@ void edit_content_level(long ID, int type)
                 value = project_data.containers[ID].items[j].value;
                 k++;
             }
-            if (inputs[3])
+            if (inputs[4])
             {
                 struct item o; o.type = item_type; o.value = value; o.activation = 0; o.ID = 0;
                 add_item(project_data.containers[ID], o);
             }
-            if (inputs[4])
+            if (inputs[3])
                 remove_item(project_data.containers[ID], value);
             changes = 1;
         }
@@ -567,11 +583,9 @@ void change_capacity(long ID)
     }
 }
 
-void modify_item(struct item *item, struct position p, char mode) // Mode 0 : creation in an inventory / map, Mode 1 : Merchandise in a request, so no creation
+void modify_item(struct item *item, struct position p, char mode) // Mode 0 : creation in map, Mode 1 : creation in inventory, Mode 2 : Merchandise in a request, so no creation
 {
-    inputs[5] = 0;
-    inputs[6] = 0;
-    inputs[10] = 0;
+    clean_inputs();
     char end = 0;
     int i = 0;
     while (!inputs[0] && !inputs[6] && !inputs[10] && !end)
@@ -606,7 +620,7 @@ void modify_item(struct item *item, struct position p, char mode) // Mode 0 : cr
             print_text_centered(112, 180 + j * 70, "Lieu :", 1, 1 + (i == j), 480);
             if (item->value && item->ID)
             {
-                print_text_centered(112, 200 + j * 70, zones_texts[item->value], 1, 6, 480);
+                print_text_centered(112, 200 + j * 70, zones_texts[item->value - 1], 1, 6, 480);
                 print_int_centered(112, 220 + j * 70, item->ID, 0, 1, 6, 480);
             }
             else
@@ -616,21 +630,43 @@ void modify_item(struct item *item, struct position p, char mode) // Mode 0 : cr
             options[j] = 4; // Choice of location (zone + map)
             j++;
         }
-        if (item->type == 13)
+        if (item->type == 14 && mode > 0)
+        {
+            print_text_centered(112, 180 + j * 70, "Valeur :", 1, 1 + (i == j), 480);
+            if (item->value)
+                print_int_centered(112, 205 + j * 70, item->value, 0, 1, 6, 480);
+            else
+                print_text_centered(112, 205 + j * 70, "Non defini", 1, 6, 480);
+            options[j] = 2; // Choice of map
+            j++;
+        }
+        if (item->type == 13 && mode < 2)
         {
             print_text_centered(112, 180 + j * 70, "Puissance :", 1, 1 + (i == j), 480);
             print_int_centered(112, 205 + j * 70, item->value, 0, 1, 6, 480);
             options[j] = 5; // Numerical value
             j++;
         }
-        if (item->type >= 7 && item->type <= 13 && item->type != 8)
+        if (item->type >= 7 && item->type <= 13 && item->type != 8 && mode < 2)
         {
             print_text_centered(112, 180 + j * 70, "Capacite :", 1, 1 + (i == j), 480);
             print_int_centered(112, 205 + j * 70, project_data.containers[item->ID].size, 0, 1, 6, 480);
             options[j] = 6; // Numerical value
             j++;
         }
-        if (item->type >= 16 && item->type <= 20)
+        if (item->type >= 7 && item->type <= 13 && mode == 2)
+        {
+            print_text_centered(112, 180 + j * 70, "Capacite :", 1, 1 + (i == j), 480);
+            if (item->ID == 0)
+                print_text_centered(112, 205 + j * 70, "Vide", 1, 6, 480);
+            if (item->ID == 1)
+                print_text_centered(112, 205 + j * 70, "Plein", 1, 6, 480);
+            if (item->ID > 1)
+                print_text_centered(112, 205 + j * 70, "Peu importe", 1, 6, 480);
+            options[j] = 6; // Numerical value
+            j++;
+        }
+        if (item->type >= 16 && item->type <= 20 && mode == 0)
         {
             print_text_centered(112, 180 + j * 70, "Sceau :", 1, 1 + (i == j), 480);
             print_text_centered(112, 205 + j * 70, cards_texts[item->ID], 1, 6, 480);
@@ -647,7 +683,7 @@ void modify_item(struct item *item, struct position p, char mode) // Mode 0 : cr
             options[j] = 8; // Switch the boolean
             j++;
         }
-        if (item->type >= 7 && item->type <= 13)
+        if (item->type >= 7 && item->type <= 13 && mode < 2)
         {
             print_text_centered(112, 180 + j * 70, "Modifier le contenu", 1, 1 + (i == j), 480);
             options[j] = 9;
@@ -670,6 +706,8 @@ void modify_item(struct item *item, struct position p, char mode) // Mode 0 : cr
                 change_type(item, p, mode);
             if (options[i] == 2)
             {
+                if (item->type == 14)
+                    map_choice(&value, 0);
                 if (item->type == 16 || item->type == 22)
                     map_choice(&value, 1);
                 if (item->type == 5 || item->type == 17)
@@ -682,13 +720,16 @@ void modify_item(struct item *item, struct position p, char mode) // Mode 0 : cr
             if (options[i] == 4)
             {
                 int map = item->ID;
-                int zone = item->value;
-                place_choice(&zone, &map);
-                item->value = zone;
+                place_choice(&value, &map);
                 item->ID = map;
             }
             if (options[i] == 6)
-                change_capacity(item->ID);
+            {
+                if (mode == 2)
+                    item->ID = (item->ID + 1) % 3;
+                else
+                    change_capacity(item->ID);
+            }
             if (options[i] == 5)
             {
                 rect(104, 92, 496, 436, 0, 0, 255);
