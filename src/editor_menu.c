@@ -437,9 +437,9 @@ void character_menu()
             print_text_centered(704, 100, "- Personnages -", 1, 1, 400);
             print_text_centered(704, 200, "Nihil", 1, 1 + (i == 0), 400);
             print_text_centered(704, 250, "Sarah", 1, 1 + (i == 1), 400);
-            print_text_centered(704, 350, "Mathias", 1, 1 + (i == 2), 400);
-            print_text_centered(704, 400, "Saihtam", 1, 1 + (i == 3), 400);
-            print_text_centered(704, 300, "Emma", 1, 1 + (i == 4), 400);
+            print_text_centered(704, 300, "Mathias", 1, 1 + (i == 2), 400);
+            print_text_centered(704, 350, "Saihtam", 1, 1 + (i == 3), 400);
+            print_text_centered(704, 400, "Emma", 1, 1 + (i == 4), 400);
             print_text_centered(704, 450, "Retour", 1, 1 + (i == 5), 400);
             if (i < 5)
             {

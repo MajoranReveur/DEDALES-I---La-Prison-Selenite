@@ -226,7 +226,7 @@ char load_mission(struct mission *m)
     if (!load_int(&value))
         return 0;
     m->activated = value;
-    m->activated = 1;
+    //m->activated = 1;
     m->password.length = 0;
     m->password.string = NULL;
     return check_endline();
@@ -827,7 +827,7 @@ char load_project(struct project *p)
         free_project(*p);
         return 0;
     }
-    struct request r = project_data.requests[0][0];
+    //struct request r = project_data.requests[0][0];
     return (fgetc(file) == EOF);
 }
 

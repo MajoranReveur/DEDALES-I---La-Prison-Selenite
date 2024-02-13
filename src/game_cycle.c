@@ -59,6 +59,14 @@ void update_request_positions()
     }
 }
 
+void get_item_description_item(struct item i, int quantity, char* str)
+{
+    char number[21] = {0};
+    int_to_str(number, quantity, 0);
+    const char* str_fields[3] = {items_texts[i.type], " x ", number};
+    concat_str(str, str_fields, 200, 3);
+}
+
 void update_active_requests()
 {
     int i = 0;
@@ -66,8 +74,8 @@ void update_active_requests()
     {
         if (!save_data.request_states[i].active)
         {
-            //print_error("Found free request :");
-            //print_error_int(i);
+            print_error("Found free request slot:");
+            print_error_int(i);
             int j = 0;
             int character = i;
             if (i >= 4)
@@ -84,6 +92,7 @@ void update_active_requests()
             {
                 if (project_data.requests[character][j].objective.activated)
                 {
+                    print_error("activated !");
                     if (character != 4 || (zone == project_data.requests[character][j].objective.p.zone && map == project_data.requests[character][j].objective.p.map))
                     {
                         save_data.request_states[i].active = 1;
@@ -110,7 +119,7 @@ void display_current_screen(struct position camera)
             display_map_items(camera.x - 40, camera.y - 40, project_data.zones[camera.zone - 1].maps[camera.map], player);
         }
         display_map_characters(camera.x - 40, camera.y - 40, camera.map, camera.zone);
-        if (camera.zone != 1 || camera.zone == 5)
+        if (camera.zone == 1 || camera.zone == 5)
             display_map_shadow_character(camera.x - 40, camera.y - 40, camera.map, camera.zone, player);
         display_sprite(4, (project_data.character_positions[player].x - camera.x + 40) * 8,  (project_data.character_positions[player].y - camera.y + 40) * 8 - 16, 
         64, player * 4 + project_data.character_positions[player].orientation, project_data.character_positions[player].x % 8 + project_data.character_positions[player].y % 8);
@@ -357,6 +366,130 @@ char can_take_item(int character, struct item objet, int quantity)
     return found >= quantity;
 }
 
+void unmark_all_items()
+{
+    int i = 0;
+    while (i < 40)
+    {
+        project_data.inventories[player][i].marked = 0;
+        if (project_data.inventories[player][i].type >= 7 && project_data.inventories[player][i].type <= 13)
+        {
+            int j = 0;
+            long container = project_data.inventories[player][i].ID;
+            while (j < project_data.containers[container].size)
+            {
+                project_data.containers[container].items[j].marked = 0;
+                j++;
+            }
+        }
+        i++;
+    }
+}
+
+
+void take_card(int character, struct item objet)
+{
+    int i = 0;
+    while (i < 40)
+    {
+        if (project_data.inventories[character][i].type == 8)
+        {
+            if (project_data.containers[project_data.inventories[character][i].ID].items[objet.value - 1].type == 0)
+            {
+                project_data.containers[project_data.inventories[character][i].ID].items[objet.value - 1] = objet;
+                return;
+            }
+        }
+        i++;
+    }
+}
+
+void take_item_in_container(int character, int container_type, struct item objet)
+{
+    int i = 0;
+    while (i < 40)
+    {
+        if (project_data.inventories[character][i].type == container_type)
+        {
+            int j = 0;
+            while (j < project_data.containers[project_data.inventories[character][i].ID].size)
+            {
+                if (project_data.containers[project_data.inventories[character][i].ID].items[j].type == 0)
+                {
+                    add_item(project_data.containers[project_data.inventories[character][i].ID], objet);
+                    return;
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+}
+
+void take_item(int character, struct item objet)
+{
+    if (objet.type == 15)
+    {
+        take_card(character, objet);
+        return;
+    }
+    if (objet.type == 14)
+    {
+        take_item_in_container(character, 7, objet);
+        return;
+    }
+    if (objet.type == 16)
+    {
+        take_item_in_container(character, 9, objet);
+        return;
+    }
+    int i = 0;
+    while (i < 40)
+    {
+        if (!project_data.inventories[character][i].type)
+        {
+            project_data.inventories[character][i] = objet;
+            return;
+        }
+        i++;
+    }
+}
+
+
+void exchange_marked_items(int character)
+{
+    int i = 0;
+    while (i < 40)
+    {
+        if (project_data.inventories[player][i].type >= 7 && project_data.inventories[player][i].type <= 13)
+        {
+            int j = 0;
+            long container = project_data.inventories[player][i].ID;
+            while (j < project_data.containers[container].size)
+            {
+                if (project_data.containers[container].items[j].marked)
+                {
+                    project_data.containers[container].items[j].marked = 0;
+                    take_item(character, project_data.containers[container].items[j]);
+                    project_data.containers[container].items[j].type = 0;
+                }
+                j++;
+            }
+        }
+        if (project_data.inventories[player][i].marked)
+        {
+            //print_error("exchange :");
+            //print_error_int(i);
+            //print_error_int(character);
+            project_data.inventories[player][i].marked = 0;
+            take_item(character, project_data.inventories[player][i]);
+            project_data.inventories[player][i].type = 0;
+            //inventory();
+        }
+        i++;
+    }
+}
+
 char is_item_matching(struct item i1, struct item i2)
 {
     //print_error("matching?");
@@ -366,6 +499,328 @@ char is_item_matching(struct item i1, struct item i2)
         return 0;
     //print_error("yep !");
     return 1;
+}
+
+int item_choice_card_request(long ID, struct item objet_request, int quantity, int total)
+{
+    inputs[5] = 0;
+    inputs[6] = 0;
+    inputs[10] = 0;
+    int i = 0;
+    int j = 0;
+    while (!inputs[0] && !inputs[5] && !inputs[6])
+    {
+        int y = 0;
+        rect(104, 92, 496, 436, 0, 0, 255);
+        rect(108, 96, 488, 428, 0, 0, 0);
+        rect(i * 60 + 120, j * 100 + 130, 48, 80, 0, 0, 255);
+        while (y < 3)
+        {
+            int x = 0;
+            while (x < 8)
+            {
+                if (x || y)
+                {
+                    if (project_data.containers[ID].items[x + y * 8 - 1].marked)
+                        rect(x * 60 + 120 + 4, y * 100 + 130 + 4, 40, 72, 100, 250, 100);
+                    //rect(x * 60 + 120 + 8, y * 100 + 130 + 8, 32, 64, 100, 100, 100);
+                    if (project_data.containers[ID].items[x + y * 8 - 1].type == 15)
+                        display_cardsprite(x * 60 + 120 + 8, y * 100 + 130 + 8, x + y * 8);
+                }
+                x++;
+            }
+            y++;
+        }
+        if (i || j)
+            print_text_centered(112, 450, cards_texts[i + j * 8], 1, 1, 480);
+        else
+            print_text_centered(112, 450, "Retour", 1, 1, 480);
+        print_refresh();
+        load_input_long();
+        if (inputs[1] && j)
+            j--;
+        if (inputs[2] && j < 2)
+            j++;
+        if (inputs[3] && i)
+            i--;
+        if (inputs[4] && i < 7)
+            i++;
+        if (inputs[5])
+        {
+            if (i || j)
+            {
+                if (is_item_matching(objet_request, project_data.containers[ID].items[i + j * 8 - 1]))
+                {
+                    if (project_data.containers[ID].items[i + j * 8 - 1].marked)
+                    {
+                        project_data.containers[ID].items[i + j * 8 - 1].marked = 0;
+                        total--;
+                    }
+                    else
+                    {
+                        project_data.containers[ID].items[i + j * 8 - 1].marked = 1;
+                        total++;
+                    }
+                }
+                inputs[5] = 0;
+            }
+        }
+    }
+    clean_inputs();
+    return total;
+}
+
+int item_choice_container_request(long ID, int type, struct item objet_request, int quantity, int total)
+{
+    clean_inputs();
+    char count_by_category[21] = {0};
+    count_by_category[0] = 'x';
+    char string_capacity[20] = {0};
+    char string_count[20] = {0};
+    char string_total_capacity[8] = {0};
+    int i = 0;
+    int camera = 0;
+    int size = project_data.containers[ID].size;
+    int count = 0;
+    int category_count = 0;
+    int_to_str(string_capacity, size, 1);
+    int old_value = 0;
+    while (i < size)
+    {
+        if (project_data.containers[ID].items[i].value)
+        {
+            count++;
+            if (project_data.containers[ID].items[i].value != old_value)
+            {
+                category_count++;
+                old_value = project_data.containers[ID].items[i].value;
+            }
+        }
+        i++;
+    }
+    int_to_str(string_count, count, 1);
+    const char *fields[3] = {string_count, "/", string_capacity};
+    concat_str(string_total_capacity, fields, 8, 3);
+    i = 0;
+    while (!inputs[0] && !inputs[6])
+    {
+        int j = 0;
+        int y = 0;
+        int k = 0;
+        while (k < camera)
+        {
+            int value = project_data.containers[ID].items[j].value;
+            while (project_data.containers[ID].items[j].value == value)
+                j++;
+            k++;
+        }
+        rect(104, 92, 496, 436, 0, 0, 255);
+        rect(108, 96, 488, 428, 0, 0, 0);
+        print_text_centered(112, 100, items_texts[type], 0, 1, 480);
+        print_text_centered(112, 140, string_total_capacity, 1, 1, 480);
+        while (y < 11 && y + camera < category_count + 1)
+        {
+            if (y + camera < category_count)
+            {
+                int value = project_data.containers[ID].items[j].value;
+                print_int(180, y * 30 + 190, value, 1, 1, 1);
+                int count_of_value = 0;
+                int count_of_marked = 0;
+                while (j < size && project_data.containers[ID].items[j].value == value)
+                {
+                    if (project_data.containers[ID].items[j].marked)
+                        count_of_marked++;
+                    j++;
+                    count_of_value++;
+                }
+                int_to_str(count_by_category + 1, count_of_value, 1);
+                print_text(400, y * 30 + 190, count_by_category, 1, 1 + (i == y + camera));
+                if (count_of_marked)
+                {
+                    int_to_str(count_by_category + 1, count_of_marked, 1);
+                    print_text(450, y * 30 + 190, count_by_category, 1, 3);
+                }
+
+            }
+            if (y + camera == category_count)
+                print_text(180, y * 30 + 190, "Retour", 1, 1 + (i == y + camera));
+            y++;
+        }
+        print_refresh();
+        load_input_long();
+        if (inputs[1])
+            i = (i + category_count) % (category_count + 1);
+        if (inputs[2])
+            i = (i + 1) % (category_count + 1);
+        if (inputs[5])
+        {
+            inputs[6] = (i == category_count);
+            inputs[4] = (i < category_count);
+        }
+        if (inputs[4] || inputs[3])
+        {
+            int k = 0;
+            int value = project_data.containers[ID].items[0].value;
+            j = 0;
+            while (k < i)
+            {
+                while (project_data.containers[ID].items[j].value == value)
+                    j++;
+                value = project_data.containers[ID].items[j].value;
+                k++;
+            }
+            if (inputs[4])
+            {
+                while (project_data.containers[ID].items[j].value == value && project_data.containers[ID].items[j].marked)
+                    j++;
+                if (is_item_matching(objet_request, project_data.containers[ID].items[j]))
+                {
+                    project_data.containers[ID].items[j].marked = 1;
+                    total++;
+                }
+            }
+            if (inputs[3])
+            {
+                int last = j;
+                while (project_data.containers[ID].items[j].value == value && project_data.containers[ID].items[j].marked)
+                {
+                    last = j;
+                    j++;
+                }
+                if (project_data.containers[ID].items[last].value == value && project_data.containers[ID].items[last].marked)
+                {
+                    project_data.containers[ID].items[last].marked = 0;
+                    total--;
+                }
+            }
+        }
+    }
+    clean_inputs();
+    return total;
+}
+
+char check_card_capacities(char* card_capacities)
+{
+    char current_cards[24] = {0};
+    int i = 0;
+    while (i < 40)
+    {
+        if (project_data.inventories[player][i].type == 8)
+        {
+            int j = 0;
+            long container = project_data.inventories[player][i].ID;
+            while (j < project_data.containers[container].size)
+            {
+                if (project_data.containers[container].items[j].type == 15 && project_data.containers[container].items[j].marked)
+                    current_cards[j]++;
+                j++;
+            }
+        }
+        i++;
+    }
+    i = 0;
+    while (i < 24)
+    {
+        if (card_capacities[i] < current_cards[i])
+            return 0;
+        i++;
+    }
+    return 1;
+}
+
+char item_choice_request(struct item objet_request, int quantity, char* cards_capacities)
+{
+    int total = 0;
+    unmark_all_items();
+    clean_inputs();
+    int x = 0;
+    int y = 0;
+    int valid = 0;
+    while (!inputs[0] && !valid)
+    {
+        rect(56, 56, 592, 592, 255, 255, 255);
+        rect(60, 60, 584, 584, 0, 0, 0);
+        int i = 0;
+        while (i < 8)
+        {
+            int j = 0;
+            while (j < 5)
+            {
+                rect(68 + 72 * i, 68 + 72 * j, 64, 64, 50, 50 + project_data.inventories[player][i + j * 8].marked * 150, 50);
+                if (project_data.inventories[player][i + j * 8].type)
+                    display_sprite(3, 68 + 72 * i, 68 + 72 * j, 64, project_data.inventories[player][i + j * 8].type - 1, 0);
+                j++;
+            }
+            i++;
+        }
+        rect(60, 428, 584, 4, 255, 255, 255);
+        rect(64 + 72 * x, 64 + 72 * y, 72, 4, 0, 0, 255);
+        rect(64 + 72 * x, 64 + 72 * y, 4, 72, 0, 0, 255);
+        rect(132 + 72 * x, 64 + 72 * y, 4, 72, 0, 0, 255);
+        rect(64 + 72 * x, 132 + 72 * y, 72, 4, 0, 0, 255);
+        
+        print_text_centered(112, 436, items_texts[project_data.inventories[player][x + y * 8].type], 1, 1, 480);
+        print_text_centered(112, 466, "A selectionner :", 1, 1, 480);
+        char item_desc[201] = {0};
+        get_item_description_item(objet_request, quantity, item_desc);
+        print_text_centered(112, 496, item_desc, 1, 1, 480);
+        print_text_centered(112, 526, "Selection :", 1, 1, 480);
+        print_int_centered(112, 556, total, 0, 1, 1, 480);
+        print_refresh();
+        load_input_long();
+        if (inputs[3] && x)
+            x--;
+        if (inputs[4] && x < 7)
+            x++;
+        if (inputs[1] && y)
+            y--;
+        if (inputs[2] && y < 4)
+            y++;
+        if (inputs[5])
+        {
+            struct item objet = project_data.inventories[player][x + y * 8];
+            if (objet.type)
+            {
+                if (is_item_matching(objet, objet_request))
+                {
+                    if (project_data.inventories[player][x + y * 8].marked)
+                    {
+                        project_data.inventories[player][x + y * 8].marked = 0;
+                        total -= 1;
+                    }
+                    else
+                    {
+                        project_data.inventories[player][x + y * 8].marked = 1;
+                        total += 1;
+                    }
+                }
+                if (objet.type == 9 ||objet.type == 7)
+                    total = item_choice_container_request(objet.ID, objet.type, objet_request, quantity, total);
+                if (objet.type == 8)
+                    total = item_choice_card_request(objet.ID, objet_request, quantity, total);
+            }
+        }
+        if (inputs[6])
+        {
+            if (total == quantity)
+            {
+                if (objet_request.type == 15)
+                    return check_card_capacities(cards_capacities);
+                valid = 1;
+            }
+            if (total > quantity)
+                print_error("Too many items selected.");
+            if (total < quantity)
+                print_error("Not enough items selected.");
+            if (!valid)
+            {
+                clean_inputs();
+                return 0;
+            }
+        }
+    }
+    clean_inputs();
+    return valid;
 }
 
 char has_item_in_container(int character, int container_type, struct item objet, int quantity)
@@ -417,7 +872,6 @@ char has_item(int character, struct item objet, int quantity)
 struct item drop_item_in_container(int character, int container_type, struct item objet)
 {
     int i = 0;
-    int found = 0;
     while (i < 40)
     {
         if (project_data.inventories[character][i].type == container_type)
@@ -490,74 +944,6 @@ char has_item_type(int type)
     objet.activation = 0;
     objet.ID = 0;
     return has_item(player, objet, 1);
-}
-
-void take_card(int character, struct item objet)
-{
-    int i = 0;
-    while (i < 40)
-    {
-        if (project_data.inventories[character][i].type == 8)
-        {
-            if (project_data.containers[project_data.inventories[character][i].ID].items[objet.value - 1].type == 0)
-            {
-                project_data.containers[project_data.inventories[character][i].ID].items[objet.value - 1] = objet;
-                return;
-            }
-        }
-        i++;
-    }
-}
-
-void take_item_in_container(int character, int container_type, struct item objet)
-{
-    int i = 0;
-    while (i < 40)
-    {
-        if (project_data.inventories[character][i].type == container_type)
-        {
-            int j = 0;
-            while (j < project_data.containers[project_data.inventories[character][i].ID].size)
-            {
-                if (project_data.containers[project_data.inventories[character][i].ID].items[j].type == 0)
-                {
-                    add_item(project_data.containers[project_data.inventories[character][i].ID], objet);
-                    return;
-                }
-                j++;
-            }
-        }
-        i++;
-    }
-}
-
-void take_item(int character, struct item objet)
-{
-    if (objet.type == 15)
-    {
-        take_card(character, objet);
-        return;
-    }
-    if (objet.type == 14)
-    {
-        take_item_in_container(character, 7, objet);
-        return;
-    }
-    if (objet.type == 16)
-    {
-        take_item_in_container(character, 9, objet);
-        return;
-    }
-    int i = 0;
-    while (i < 40)
-    {
-        if (!project_data.inventories[character][i].type)
-        {
-            project_data.inventories[player][i] = objet;
-            return;
-        }
-        i++;
-    }
 }
 
 void take_item_position(struct position p, int character)
@@ -697,65 +1083,91 @@ void get_item_description(struct request r, char* str)
 {
     char number[21] = {0};
     int_to_str(number, r.objective.value4, 0);
-    char* str_fields[3] = {items_texts[r.objective.value1 / 2], " x ", number};
+    const char* str_fields[3] = {items_texts[r.objective.value1 / 2], " x ", number};
     concat_str(str, str_fields, 200, 3);
+}
+
+void get_card_capacities(int character, char* card_capacities)
+{
+    int i = 0;
+    while (i < 40)
+    {
+        if (project_data.inventories[character][i].type == 8)
+        {
+            int j = 0;
+            long container = project_data.inventories[character][i].ID;
+            while (j < project_data.containers[container].size)
+            {
+                if (project_data.containers[container].items[j].type == 0)
+                    card_capacities[j]++;
+                j++;
+            }
+        }
+        i++;
+    }
 }
 
 void dealing_with_request(int character, int value)
 {
     struct request r = project_data.requests[character][value];
-    char success = 0;
-    if (r.objective.type == 0)
+    char success = (r.objective.activated == 2);
+    if (r.objective.type == 0 && !success)
     {
         display_message("Petite discussion.");
         success = 1;
     }
-    if (r.objective.type == 1)
-        display_message("Montre moi...");
-    if (r.objective.type == 2)
-        display_message("Donne moi...");
-    if (r.objective.type == 1 || r.objective.type == 2)
+    if (r.objective.type == 1 && !success)
     {
+        display_message("Montre moi...");
         char item_desc[201] = {0};
         get_item_description(r, item_desc);
         char item_str[201] = {0};
-        char* str[2] = {"Objet : ", item_desc};
+        const char* str[2] = {"Objet : ", item_desc};
         concat_str(item_str, str, 200, 2);
         display_message(item_str);
         if (has_item_request(player, r))
+            success = 1;
+    }
+    if (r.objective.type == 2 && !success)
+    {
+        display_message("Donne moi...");
+        char item_desc[201] = {0};
+        get_item_description(r, item_desc);
+        char item_str[201] = {0};
+        const char* str[2] = {"Objet : ", item_desc};
+        concat_str(item_str, str, 200, 2);
+        display_message(item_str);
+        struct item objet = get_item_from_request(r);
+        if (can_take_item(character, objet, 1))
         {
-            if (r.objective.type == 1)
-                success = 1;
-            if (r.objective.type == 2)
+            print_error("Try to get it !");
+            char cards_capacities[24] = {0};
+            get_card_capacities(character, cards_capacities);
+            if (item_choice_request(objet, r.objective.value4, cards_capacities))
             {
-                print_error("Try to get it !");
-                struct item objet = get_item_from_request(r);
-                if (can_take_item(character, objet, 1))
-                {
-                    objet = drop_item(player, objet);
-                    take_item(character, objet);
-                    success = 1;
-                }
+                exchange_marked_items(character);
+		        //inventory();
+                success = 1;
             }
-            if (success)
-                display_message("Requete faisable.");
         }
+        else
+            display_message("Ah non, je ne peux pas prendre ça en fait.");
     }
     if (success)
     {
-        print_error_int(character);
-        print_error_int(project_data.character_positions[player].zone);
-        project_data.requests[character][value].objective.activated = 0;
+        print_error("success");
+        project_data.requests[character][value].objective.activated = 2;
+        //print_error_int(character);
+        //print_error_int(project_data.character_positions[player].zone);
+        int request_character = character;
         if (character == 4)
         {
             if (project_data.character_positions[player].zone == 1)
-                character = 4 + project_data.character_positions[player].map;
+                request_character = 4 + project_data.character_positions[player].map;
             if (project_data.character_positions[player].zone == 5)
-                character = 4 + project_data.character_positions[player].map + project_data.zones[0].map_number;
+                request_character = 4 + project_data.character_positions[player].map + project_data.zones[0].map_number;
         }
-        print_error_int(character);
-        save_data.request_states[character].active = 0;
-        update_active_requests();
+        //print_error_int(request_character);
         
         if (r.reward.type && has_item(character, r.reward, 1))
         {
@@ -765,9 +1177,25 @@ void dealing_with_request(int character, int value)
                 struct item objet = drop_item(character, r.reward);
                 take_item(player, objet);
                 add_item_notification(objet);
+                project_data.requests[character][value].objective.activated = 0;
+                save_data.request_states[request_character].active = 0;
+                update_active_requests();
+            }
+            else
+            {
+                display_message("Oh, tu ne peux pas prendre de recompense...");
+                display_message("Reviens plus tard !");
             }
         }
+        if (!r.reward.type)
+        {
+            print_error("no reward");
+            project_data.requests[character][value].objective.activated = 0;
+            save_data.request_states[request_character].active = 0;
+            update_active_requests();
+        }
     }
+    clean_inputs();
 }
 
 void main_loop()
