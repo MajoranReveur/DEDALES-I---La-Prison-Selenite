@@ -14,7 +14,7 @@ extern char file_saved;
 extern char** main_menu_texts;
 int main(int argc, char** argv)
 {
-	software_mode = 0; //0 for editor, 1 for game
+	software_mode = 1; //0 for editor, 1 for game
 	file_loaded = 0;
 	file_saved = 1;
 	default_inputs();

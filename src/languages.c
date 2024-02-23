@@ -45,6 +45,54 @@ void update_texts()
 	request_characters_texts = electrical_texts + ELECTRICAL_T;
 }
 
+
+char string_load(FILE* file, char** result)
+{
+	//fpos_t position;
+	size_t len = 0;
+	size_t size = 100;
+	//fgetpos(file, &position);
+	char* str = calloc(size, sizeof(char));
+	if (!str)
+		return 0;
+	char b = fgetc(file);
+	while (b == '\'')
+	{
+		while (b != '\n' && b != EOF)
+			b = fgetc(file);
+		//fgetpos(file, &position);
+		b = fgetc(file);
+	}
+	//print_error("reading...");
+	while (b != '\n' && b != EOF)
+	{
+		str[len] = b;
+		b = fgetc(file);
+		len++;
+		if (len + 1 >= size)
+		{
+			char* new_str = realloc(str, sizeof(char) * (size + 100));
+			if (!new_str)
+			{
+				free(str);
+				return 0;
+			}
+			str = new_str;
+			size += 100;
+		}
+	}
+	str[len] = 0;
+	//fsetpos(file, &position);
+	//print_error_int(len);
+	//print_error(str);
+	char* new_str = realloc(str, sizeof(char) * (len + 1));
+	if (!new_str)
+		return 0;
+	*result = new_str;
+	//print_error(new_str);
+	return 1;
+}
+/*
 char string_load(FILE* file, char** result)
 {
 	fpos_t position;
@@ -58,12 +106,14 @@ char string_load(FILE* file, char** result)
 		fgetpos(file, &position);
 		b = fgetc(file);
 	}
+	print_error("reading...");
 	while (b != '\n' && b != EOF)
 	{
 		b = fgetc(file);
 		len++;
 	}
 	fsetpos(file, &position);
+	print_error_int(len);
 	char* str = calloc(len, sizeof(char));
 	if (!str)
 		return 0;
@@ -78,7 +128,7 @@ char string_load(FILE* file, char** result)
 	*result = str;
 	print_error(str);
 	return 1;
-}
+}*/
 
 char language_load(char* language, char first_one)
 {
