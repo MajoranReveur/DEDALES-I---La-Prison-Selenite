@@ -1,10 +1,10 @@
-0 0 0 0 0 0 3 2 3 1 9 5 
+0 0 0 0 0 0 3 2 3 1 9 5 3 
 1 10 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 0 0 0 0 
 0 0 0 0 
 0 0 0 0 
 0 0 0 0 
-16 1 0 1 
+16 1 0 0 
 0 0 0 0 
 0 0 0 0 
 0 0 0 0 
@@ -116,7 +116,7 @@
 0 0 0 0 
 
 0 0 0 0 0 0 0 0 0 0 
-0 0 0 0 2 0 0 0 0 0 
+0 1 1 0 2 0 0 0 0 0 
 0 0 0 0 
 0 0 0 0 
 0 0 0 0 
@@ -634,4 +634,56 @@
 0 0 0 0 
 
 
+
+5 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 
+62 Ceci est un test.
+Est-ce que ca va fonctionner ?
+Je l'espere !
+
+0 1 0 0 0 0 0 0 0 0 
+0 0 0 0 0 
+53 Quoi, c'est deja la fin ?
+C'etait facile, au final !
+
+
+0 5 0 0 0 0 0 0 0 0 
+0 0 0 0 0 
+66 Te rejouis pas trop vite, le vieux.
+C'est qu'un niveau test, hein.
+
+0 4 0 0 0 0 0 0 0 0 
+0 0 0 0 0 
+61 Oui, mais au moins, maintenant on est surs que
+ca fonctionne.
+
+18 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 
+0 
+
+2 1 0 9 5 0 
+0 0 1 
+1 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 
+57 Dialogue pour tester les cinematiques
+en debut de partie.
+
+0 0 0 0 0 0 
+0 0 1 
+1 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 
+75 Nous
+interrompons
+votre
+programme
+pour
+tester
+un
+autre
+type
+de
+cinematique.
+
+1 1 0 9 1 0 
+0 0 1 
 

@@ -1,6 +1,6 @@
 #include "request_editor.h"
 
-char* request_types[19] = {
+char* request_types[18] = {
     "Parler",
     "Montrer un/des objets",
     "Donner un/des objets",
@@ -18,8 +18,7 @@ char* request_types[19] = {
     "Activer le courant",
     "Desactiver le courant",
     "Aller a un endroit sur la carte",
-    "Trouver quelqu'un",
-    "Mot de Passe"
+    "Trouver quelqu'un"
 };
 
 void print_request(struct request *r, int character)
@@ -51,9 +50,9 @@ void change_mission_type(struct mission *m)
             print_text_centered(108, 104, "- Missions -", 1, 1, 488);
             while (j < 12)
             {
-                if (camera + j < 19)
+                if (camera + j < 18)
                     print_text_centered(108, 150 + j * 30, request_types[camera + j], 1, 1 + (camera + j == i), 488);
-                if (camera + j == 19)
+                if (camera + j == 18)
                     print_text_centered(108, 150 + j * 30, "Retour", 1, 1 + (camera + j == i), 488);
                 j++;
             }
@@ -64,11 +63,11 @@ void change_mission_type(struct mission *m)
                 if (i)
                     i--;
                 else
-                    i = 19;
+                    i = 18;
             }
             if (inputs[2])
             {
-                if (i < 19)
+                if (i < 18)
                     i++;
                 else
                     i = 0;
@@ -82,13 +81,13 @@ void change_mission_type(struct mission *m)
             }
             if (camera + 10 < i)
             {
-                if (i < 19)
+                if (i < 18)
                     camera = i - 10;
                 else
                     camera = i - 11;
             }
         }
-        if (inputs[5] && i < 19)
+        if (inputs[5] && i < 18)
             m->type = i;
     }
 }
@@ -147,18 +146,11 @@ void mission_editor(struct mission *m)
             options[j] = 6; // Change stage
             j++;
         }
-        if (m->type == 18)
-        {
-            print_text_centered(112, 180 + j * 70, "Mot de passe :", 1, 1 + (i == j), 480);
-            print_text_centered(112, 205 + j * 70, "TODO", 1, 6, 480);
-            options[j] = 6; // Change stage
-            j++;
-        }
         if (m->type == 10)
         {
             print_text_centered(112, 180 + j * 70, "FISSURE :", 1, 1 + (i == j), 480);
             print_text_centered(112, 205 + j * 70, "TODO", 1, 6, 480);
-            options[j] = 6; // Change stage
+            options[j] = 7; // Change fissure
             j++;
         }
         print_text_centered(112, 180 + j * 70, "Retour", 1, 1 + (i == j), 480);
@@ -443,8 +435,6 @@ void request_character_editor(int character)
                         project_data.requests[character][i].reward.value = 0;
                         project_data.requests[character][i].objective.type = 0;
                         project_data.requests[character][i].objective.activated = 0;
-                        project_data.requests[character][i].objective.password.length = 0;
-                        project_data.requests[character][i].objective.password.string = NULL;
                         project_data.requests[character][i].objective.p.map = 0;
                         project_data.requests[character][i].objective.p.orientation = 0;
                         project_data.requests[character][i].objective.p.x = 0;

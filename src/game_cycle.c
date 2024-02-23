@@ -4,6 +4,7 @@ int player = 0;
 char savable = 1;
 char in_motion = 0;
 char map_changed = 0;
+char endgame = 0;
 
 int get_player()
 {
@@ -13,6 +14,107 @@ int get_player()
 char is_savable()
 {
     return savable;
+}
+
+void reset_cinematic_triggers()
+{
+    int z = 0;
+    while (z < project_data.parameters[11])
+    {
+        int m = 0;
+        while (m < project_data.zones[z].map_number)
+        {
+            int x = 0;
+            while (x < project_data.zones[z].maps[m].x)
+            {
+                int y = 0;
+                while (y < project_data.zones[z].maps[m].y)
+                {
+                    project_data.zones[z].maps[m].cinematic_triggers[x][y] = 0;
+                    y++;
+                }
+                x++;
+            }
+            m++;
+        }
+        z++;
+    }
+    int i = 0;
+    while (i < project_data.parameters[12])
+    {
+        if (project_data.cinematics[i].trigger.active)
+        {
+            int type = project_data.cinematics[i].trigger.type;
+            //Case for location
+            if (type == 1 || type == 2)
+            {
+                struct position p = project_data.cinematics[i].trigger.p;
+                if (project_data.zones[p.zone - 1].maps[p.map].cinematic_triggers[p.x][p.y] == 0)
+                {
+                    project_data.zones[p.zone - 1].maps[p.map].cinematic_triggers[p.x][p.y] = i + 1;
+                }
+            }
+        }
+        i++;
+    }
+}
+
+void run_event(struct cinematic_event c)
+{
+    if (c.type == 0)
+    {
+        display_message(c.dialog.string);
+    }
+    if (c.type == 18)
+    {
+        display_message("FIN DE LA PARTIE !!!");
+        endgame = 1;
+    }
+}
+
+void run_cinematic(long id)
+{
+    int i = 0;
+    while (i < project_data.cinematics[id].length)
+    {
+        run_event(project_data.cinematics[id].events[i]);
+        i++;
+    }
+}
+
+long find_another_cinematic_position(struct position p, long start)
+{
+    long i = start;
+    while (i < project_data.parameters[12])
+    {
+        if (project_data.cinematics[i].trigger.active)
+        {
+            int type = project_data.cinematics[i].trigger.type;
+            //Case for location
+            if (type == 1 || type == 2)
+            {
+                struct position p2 = project_data.cinematics[i].trigger.p;
+                if (p.zone == p2.zone && p.map == p2.map && p.x == p2.x && p.y == p2.y)
+                    return i + 1;
+            }
+        }
+        i++;
+    }
+    return 0;
+}
+
+void handle_cinematic(long id)
+{
+    savable = 0;
+    project_data.cinematics[id].trigger.active = 0;
+    run_cinematic(id);
+    int type = project_data.cinematics[id].trigger.type;
+    if (type == 1 || type == 2)
+    {
+        struct position p = project_data.cinematics[id].trigger.p;
+        project_data.zones[p.zone - 1].maps[p.map].cinematic_triggers[p.x][p.y] = find_another_cinematic_position(p, 0);
+    }
+    map_changed = 1;
 }
 
 void update_perception(int player)
@@ -74,8 +176,8 @@ void update_active_requests()
     {
         if (!save_data.request_states[i].active)
         {
-            print_error("Found free request slot:");
-            print_error_int(i);
+            //print_error("Found free request slot:");
+            //print_error_int(i);
             int j = 0;
             int character = i;
             if (i >= 4)
@@ -92,7 +194,7 @@ void update_active_requests()
             {
                 if (project_data.requests[character][j].objective.activated)
                 {
-                    print_error("activated !");
+                    //print_error("activated !");
                     if (character != 4 || (zone == project_data.requests[character][j].objective.p.zone && map == project_data.requests[character][j].objective.p.map))
                     {
                         save_data.request_states[i].active = 1;
@@ -911,8 +1013,8 @@ struct item drop_item(int character, struct item objet)
         {
             struct item result = project_data.inventories[character][i];
             project_data.inventories[character][i].type = 0;
-            print_error("drop :");
-            print_error_int(i);
+            //print_error("drop :");
+            //print_error_int(i);
             return result;
         }
         i++;
@@ -1018,8 +1120,8 @@ void reboot_portal(int zone, int map, int player)
 
 void quit_portal(int zone, int map, int player)
 {
-    print_error_int(zone);
-    print_error_int(map);
+    //print_error_int(zone);
+    //print_error_int(map);
     reboot_portal(zone, map, player);
     int i = 0;
     i = 0;
@@ -1140,7 +1242,7 @@ void dealing_with_request(int character, int value)
         struct item objet = get_item_from_request(r);
         if (can_take_item(character, objet, 1))
         {
-            print_error("Try to get it !");
+            //print_error("Try to get it !");
             char cards_capacities[24] = {0};
             get_card_capacities(character, cards_capacities);
             if (item_choice_request(objet, r.objective.value4, cards_capacities))
@@ -1155,7 +1257,7 @@ void dealing_with_request(int character, int value)
     }
     if (success)
     {
-        print_error("success");
+        //print_error("success");
         project_data.requests[character][value].objective.activated = 2;
         //print_error_int(character);
         //print_error_int(project_data.character_positions[player].zone);
@@ -1171,7 +1273,7 @@ void dealing_with_request(int character, int value)
         
         if (r.reward.type && has_item(character, r.reward, 1))
         {
-            print_error("reward");
+            //print_error("reward");
             if (can_take_item(player, r.reward, 1))
             {
                 struct item objet = drop_item(character, r.reward);
@@ -1189,7 +1291,7 @@ void dealing_with_request(int character, int value)
         }
         if (!r.reward.type)
         {
-            print_error("no reward");
+            //print_error("no reward");
             project_data.requests[character][value].objective.activated = 0;
             save_data.request_states[request_character].active = 0;
             update_active_requests();
@@ -1200,11 +1302,10 @@ void dealing_with_request(int character, int value)
 
 void main_loop()
 {
-    char done = 0;
     char first_move = 0;
     in_motion = 0;
     struct position p_player;
-    while (!done)
+    while (!endgame && !inputs[0])
     {
         update_knowledge(player);
         p_player = project_data.character_positions[player];
@@ -1213,8 +1314,6 @@ void main_loop()
         print_refresh();
         load_input();
         p_player = project_data.character_positions[player];
-        if (inputs[0])
-            done = 1;
         if (!in_motion && !map_changed && inputs[5])
         {
             if (is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
@@ -1269,6 +1368,21 @@ void main_loop()
             {
                 first_move = 1;
                 in_motion = 1;
+            }
+        }
+        //Cinematics when passing by a cell
+        if (in_motion && !(p_player.x % 8 || p_player.y % 8))
+        {
+            long cinematic_id = project_data.zones[p_player.zone - 1].maps[p_player.map].cinematic_triggers[p_player.x / 8][p_player.y / 8];
+            if (cinematic_id)
+            {
+                long id = cinematic_id;
+                while (id && project_data.cinematics[id - 1].trigger.type != 1)
+                {
+                    id = find_another_cinematic_position(project_data.cinematics[id - 1].trigger.p, id);
+                }
+                if (id)
+                    handle_cinematic(id - 1);
             }
         }
         if (in_motion && !(p_player.x % 8 || p_player.y % 8))
@@ -1457,12 +1571,26 @@ void main_loop()
             }
         }
         project_data.character_positions[player] = p_player;
+        //Cinematics when stop at a cell
+        if (!in_motion && !map_changed && !(p_player.x % 8) && !(p_player.y % 8))
+        {
+            long cinematic_id = project_data.zones[p_player.zone - 1].maps[p_player.map].cinematic_triggers[p_player.x / 8][p_player.y / 8];
+            if (cinematic_id)
+            {
+                handle_cinematic(cinematic_id - 1);
+            }
+        }
         savable = !in_motion && !map_changed;
     }
 }
 
 void launch_game(char with_save, int save_spot)
 {
+    endgame = 0;
+    savable = 1;
+    in_motion = 0;
+    map_changed = 0;
+    reset_cinematic_triggers();
     save_data.request_states = NULL;
     if (!allocate_knowledge(&save_data))
     {
@@ -1558,7 +1686,7 @@ void launch_game(char with_save, int save_spot)
         save_data.portals[i].type = 0;
         i++;
     }
-    print_error("Start !");
+    //print_error("Start !");
     player = project_data.parameters[4];
     map_changed = 1;
     if (with_save)
@@ -1570,6 +1698,13 @@ void launch_game(char with_save, int save_spot)
     }
     else
     {
+        i = 0;
+        while (i < project_data.parameters[12])
+        {
+            if (project_data.cinematics[i].trigger.type == 0 && project_data.cinematics[i].trigger.active)
+                handle_cinematic(i);
+            i++;
+        }
         update_active_requests();
         main_loop();
     }

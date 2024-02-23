@@ -224,6 +224,8 @@ void load_input_error()
 
 void string_input(char *rep, size_t length, char *instruction)
 {
+	SDL_FlushEvent(SDL_KEYDOWN);
+	SDL_FlushEvent(SDL_TEXTINPUT);
 	int screen_size = 1104 - software_mode * 400;
 	size_t len = 0;
 	size_t position = 0;
@@ -371,6 +373,211 @@ int int_input(int n, int x, int y)
 		}
 	}
 	return n;
+}
+
+size_t update_text_lines(size_t * new_lines, size_t * cameras, char* string)
+{
+	size_t lines = 0;
+	size_t i = 0;
+	new_lines[0] = 0;
+	while (string[i])
+	{
+		if (string[i] == '\n')
+		{
+			lines++;
+			new_lines[lines] = i + 1;
+		}
+		i++;
+	}
+	return lines + 1;
+}
+
+void text_input(struct text *t, char *instruction)
+{
+	//SDL_PumpEvents();
+	SDL_FlushEvent(SDL_KEYDOWN);
+	SDL_FlushEvent(SDL_TEXTINPUT);
+	int screen_size = 1104 - software_mode * 400;
+	screen_size = 704;
+	size_t len = t->length;
+	size_t positionx = 0;
+	size_t positiony = 0;
+	size_t new_lines[100] = {0};
+	size_t cameras[100] = {0};
+	size_t cameray = 0;
+	SDL_Event event;
+	if (t->length == 0)
+	{
+		t->string = calloc(101, sizeof(char));
+		if (t->string == NULL)
+		{
+			print_error("No Memory");
+			return;
+		}
+		t->length = 101;
+	}
+	size_t lines = update_text_lines(new_lines, cameras, t->string);
+	char ending = (inputs[0] != 0);
+	char single_letter[2];
+	single_letter[1] = 0;
+	rect(0, 0, 704, 704, 0, 0, 0);
+	print_text(20, 600, "Actuel :", 1, 1);
+	print_text(20, 650, "Maximum :", 1, 1);
+	print_text(20, 20, instruction, 1, 1);
+	print_text(screen_size / 2, 600, "Valider :", 1, 1);
+	print_text(screen_size / 2, 650, "Escape", 1, 1);
+	while (!ending)
+	{
+		if (t->length == len && len)
+		{
+			char* new_string = realloc(t->string, sizeof(char) * (len + 100));
+			if (new_string)
+			{
+				t->string = new_string;
+				t->length += 100;
+			}
+		}
+		if (positiony - cameray > 14)
+			cameray = positiony - 14;
+		if (positiony && positiony == cameray)
+			cameray = positiony - 1;
+		rect(0, 100, 704, 500, 0, 0, 0);
+		size_t i = cameray;
+		while (i < lines && i - cameray < 15)
+		{
+			size_t j = 0;
+			while (j + new_lines[i] + cameras[i] < len && t->string[j + new_lines[i] + cameras[i]] != '\n' && j < 38)
+			{
+				single_letter[0] = t->string[j + new_lines[i] + cameras[i]];
+				print_text(18 * j + 4, 100 + (i - cameray) * 30, single_letter, 1, 1);
+				j++;
+			}
+			i++;
+		}
+		rect((positionx - cameras[positiony]) * 18, 100 + (positiony - cameray) * 30, 4, 20, 255, 255, 255);
+		rect(270, 600, 434, 104, 0, 0, 0);
+		print_int(270, 600, len, 0, 1, 1);
+		print_int(270, 650, t->length, 0, 1, 1);
+		print_refresh();
+		SDL_WaitEvent(&event);
+		if (event.type == SDL_QUIT)
+		{
+			ending = 1;
+			inputs[0] = 1;
+		}
+		else if (event.type == SDL_KEYDOWN)
+		{
+			if (event.key.keysym.sym == SDLK_BACKSPACE && (positionx + positiony))
+			{
+				if (positionx)
+					positionx--;
+				else
+				{
+					positiony--;
+					positionx = new_lines[positiony + 1] - new_lines[positiony] - 1;
+				}
+				len--;
+				size_t i = new_lines[positiony] + positionx;
+				while (i < len)
+				{
+					t->string[i] = t->string[i + 1];
+					i++;
+				}
+				t->string[len] = 0;
+				lines = update_text_lines(new_lines, cameras, t->string);
+			}
+			if (event.key.keysym.sym == SDLK_ESCAPE && len)
+				ending = 2;
+			if (event.key.keysym.sym == SDLK_RETURN && len && lines < 99)
+			{
+				size_t l = len;
+				size_t l_copy = len + 1 < t->length ? 1 : t->length - len;
+				while (l > new_lines[positiony] + positionx)
+				{
+					l--;
+					t->string[l + l_copy] = t->string[l];
+				}
+				t->string[new_lines[positiony] + positionx] = '\n';
+				len += l_copy;
+				positionx = 0;
+				positiony++;
+				t->string[len] = 0;
+				//print_error(t->string);
+				lines = update_text_lines(new_lines, cameras, t->string);
+			}
+			if (event.key.keysym.sym == SDLK_LEFT && positionx + positiony)
+			{
+				if (positionx)
+					positionx--;
+				else
+				{
+					positiony--;
+					positionx = new_lines[positiony + 1] - new_lines[positiony] - 1;
+				}
+			}
+			if (event.key.keysym.sym == SDLK_RIGHT && positionx + new_lines[positiony] < len)
+			{
+				if (t->string[positionx + new_lines[positiony]] == '\n')
+				{
+					positionx = 0;
+					positiony++;
+				}
+				else
+					positionx++;
+			}
+			if (event.key.keysym.sym == SDLK_UP && positiony)
+			{
+				positiony--;
+				if (new_lines[positiony] + positionx + 1 >= new_lines[positiony + 1])
+					positionx = new_lines[positiony + 1] - new_lines[positiony] - 1;
+			}
+			if (event.key.keysym.sym == SDLK_DOWN && positiony + 1 < lines)
+			{
+				positiony++;
+				if (positiony + 1 < lines && new_lines[positiony] + positionx + 1 >= new_lines[positiony + 1])
+					positionx = new_lines[positiony + 1] - new_lines[positiony] - 1;
+				if (new_lines[positiony] + positionx >= len)
+					positionx = len - new_lines[positiony];
+			}
+			if (positionx <= cameras[positiony] && positionx)
+				cameras[positiony] = positionx - 1;
+			if (positionx <= cameras[positiony] && !positionx)
+				cameras[positiony] = 0;
+			if (positionx - cameras[positiony] > 37)
+				cameras[positiony] = positionx - 37;
+		}
+		else if (event.type == SDL_TEXTINPUT)
+		{
+			char *letter = event.text.text;
+			size_t l = 0;
+			while (letter[l])
+				l++;
+			size_t l_copy = len + l < t->length ? l : t->length - len;
+			l = len;
+			while (l > new_lines[positiony] + positionx)
+			{
+				l--;
+				t->string[l + l_copy] = t->string[l];
+			}
+			l = 0;
+			while (l < l_copy)
+			{
+				t->string[new_lines[positiony] + positionx + l] = event.text.text[l];
+				l++;
+			}
+			len += l_copy;
+			positionx += l_copy;
+			t->string[len] = 0;
+			lines = update_text_lines(new_lines, cameras, t->string);
+		}
+	}
+	if (ending == 1)
+		inputs[0] = 1;
+	char* new_string = realloc(t->string, sizeof(char) * len);
+	if (new_string)
+		t->string = new_string;
+	t->length = len;
+	clean_inputs();
 }
 
 char check_compatibility(int x, SDL_KeyCode key)

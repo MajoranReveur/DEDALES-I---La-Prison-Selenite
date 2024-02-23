@@ -423,6 +423,7 @@ void delete_map(int zone, int map)
         project_data.zones[zone].maps[i].cells = project_data.zones[zone].maps[i + 1].cells;
         project_data.zones[zone].maps[i].items = project_data.zones[zone].maps[i + 1].items;
         project_data.zones[zone].maps[i].thoughts = project_data.zones[zone].maps[i + 1].thoughts;
+        project_data.zones[zone].maps[i].cinematic_triggers = project_data.zones[zone].maps[i + 1].cinematic_triggers;
         project_data.zones[zone].maps[i].color_length = project_data.zones[zone].maps[i + 1].color_length;
         project_data.zones[zone].maps[i].color_sequency = project_data.zones[zone].maps[i + 1].color_sequency;
         project_data.zones[zone].maps[i].initial_delay = project_data.zones[zone].maps[i + 1].initial_delay;
@@ -588,18 +589,22 @@ void change_map_dimensions(int zone, int map)
     //Allocation of the new map
     int **x_cells = malloc(sizeof(int *) * x);
     char **x_thoughts = NULL;
+    long **x_cinematic_triggers = NULL;
     struct item **x_items = NULL;
     if (x_cells != NULL)
         x_items = malloc(sizeof(struct item *) * x);
     if (x_items != NULL)
         x_thoughts = malloc(sizeof(char *) * x);
-    char valid = x_thoughts != NULL;
+    if (x_thoughts != NULL)
+        x_cinematic_triggers = malloc(sizeof(long *) * x);
+    char valid = x_cinematic_triggers != NULL;
     int i = 0;
     while (i < x && valid)
     {
         x_cells[i] = NULL;
         x_items[i] = NULL;
         x_thoughts[i] = NULL;
+        x_cinematic_triggers[i] = NULL;
         i++;
     }
     i = 0;
@@ -608,7 +613,8 @@ void change_map_dimensions(int zone, int map)
         x_cells[i] = malloc(sizeof(int) * y);
         x_items[i] = malloc(sizeof(struct item) * y);
         x_thoughts[i] = malloc(sizeof(char) * y);
-        valid = (x_cells[i] != NULL && x_items[i] != NULL && x_thoughts[i] != NULL);
+        x_cinematic_triggers[i] = malloc(sizeof(long) * y);
+        valid = (x_cells[i] != NULL && x_items[i] != NULL && x_thoughts[i] != NULL && x_cinematic_triggers[i] != NULL);
         i++;
     }
     while (i && !valid)
@@ -617,12 +623,14 @@ void change_map_dimensions(int zone, int map)
         free(x_cells[i]);
         free(x_items[i]);
         free(x_thoughts[i]);
+        free(x_cinematic_triggers[i]);
     }
     if (!valid)
     {
         free(x_cells);
         free(x_items);
         free(x_thoughts);
+        free(x_cinematic_triggers);
         print_error("Pas assez de memoire !");
         return;
     }
@@ -639,6 +647,7 @@ void change_map_dimensions(int zone, int map)
             x_items[i][j].type = 0;
             x_items[i][j].value = 0;
             x_thoughts[i][j] = 0;
+            x_cinematic_triggers[i][j] = 0;
             j++;
         }
         i++;
@@ -656,6 +665,7 @@ void change_map_dimensions(int zone, int map)
             x_items[i][j].type = project_data.zones[zone].maps[map].items[i][j].type;
             x_items[i][j].value = project_data.zones[zone].maps[map].items[i][j].value;
             x_thoughts[i][j] = project_data.zones[zone].maps[map].thoughts[i][j];
+            x_cinematic_triggers[i][j] = project_data.zones[zone].maps[map].cinematic_triggers[i][j];
             j++;
         }
         i++;
@@ -679,6 +689,7 @@ void change_map_dimensions(int zone, int map)
     project_data.zones[zone].maps[map].cells = x_cells;
     project_data.zones[zone].maps[map].items = x_items;
     project_data.zones[zone].maps[map].thoughts = x_thoughts;
+    project_data.zones[zone].maps[map].cinematic_triggers = x_cinematic_triggers;
     project_data.zones[zone].maps[map].x = x;
     project_data.zones[zone].maps[map].y = y;
     print_error("Carte modifiee !");
@@ -817,17 +828,21 @@ char create_map(int zone)
     int **x_cells = malloc(sizeof(int *) * x);
     struct item **x_items = NULL;
     char **x_thoughts = NULL;
+    long **x_cinematic_triggers = NULL;
     if (x_cells != NULL)
         x_items = malloc(sizeof(struct item *) * x);
     if (x_items != NULL)
         x_thoughts = malloc(sizeof(char *) * x);
-    char valid = x_thoughts != NULL;
+    if (x_thoughts != NULL)
+        x_cinematic_triggers = malloc(sizeof(long *) * x);
+    char valid = x_cinematic_triggers != NULL;
     int i = 0;
     while (i < x && valid)
     {
         x_cells[i] = NULL;
         x_items[i] = NULL;
         x_thoughts[i] = NULL;
+        x_cinematic_triggers[i] = NULL;
         i++;
     }
     i = 0;
@@ -836,7 +851,8 @@ char create_map(int zone)
         x_cells[i] = malloc(sizeof(int) * y);
         x_items[i] = malloc(sizeof(struct item) * y);
         x_thoughts[i] = malloc(sizeof(char) * y);
-        valid = (x_cells[i] != NULL && x_items[i] != NULL && x_thoughts[i] != NULL);
+        x_cinematic_triggers[i] = malloc(sizeof(long) * y);
+        valid = (x_cells[i] != NULL && x_items[i] != NULL && x_thoughts[i] != NULL && x_cinematic_triggers[i] != NULL);
         i++;
     }
     struct map *new_map_list = NULL;
@@ -849,12 +865,14 @@ char create_map(int zone)
         free(x_cells[i]);
         free(x_items[i]);
         free(x_thoughts[i]);
+        free(x_cinematic_triggers[i]);
     }
     if (!valid)
     {
         free(x_cells);
         free(x_items);
         free(x_thoughts);
+        free(x_cinematic_triggers);
         print_error("Pas assez de memoire !");
         return 0;
     }
@@ -870,11 +888,13 @@ char create_map(int zone)
             x_items[i][j].type = 0;
             x_items[i][j].value = 0;
             x_thoughts[i][j] = 0;
+            x_cinematic_triggers[i][j] = 0;
             j++;
         }
         i++;
     }
     new_map_list[project_data.zones[zone].map_number].thoughts = x_thoughts;
+    new_map_list[project_data.zones[zone].map_number].cinematic_triggers = x_cinematic_triggers;
     new_map_list[project_data.zones[zone].map_number].cells = x_cells;
     new_map_list[project_data.zones[zone].map_number].items = x_items;
     new_map_list[project_data.zones[zone].map_number].x = x;

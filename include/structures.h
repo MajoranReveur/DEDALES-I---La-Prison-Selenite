@@ -32,6 +32,7 @@ struct item
     int value;
     long ID; //Maximum : (999*999*5 + 250) containers, *100 with items inside. So basically around 500 million. Rather use long than size_t, which can be maxed at 65 335 only.
     char activation;
+    char marked; //for requests only, isn't saved
 };
 
 struct container
@@ -55,13 +56,8 @@ Project parameters :
 9 - Number of requests from Saihtam
 10 - Number of containers items
 11 - Number of zones (cannot be less than 5)
+12 - Number of cinematics
 */
-
-struct event_map
-{
-    long** cells;
-};
-
 struct portal
 {
     int type;
@@ -118,7 +114,6 @@ struct mission
     int value3;
     int value4;
     char activated;
-    struct text password;
 };
 
 struct request
@@ -135,15 +130,24 @@ struct cinematic_event
     int value2;
     int value3;
     int value4;
-    char condition;
     struct position p;
     struct position target;
+};
+
+struct cinematic_trigger
+{
+    int type;
+    struct position p;
+    int value;
+    long ID;
+    char active;
 };
 
 struct cinematic
 {
     int length;
     struct cinematic_event* events;
+    struct cinematic_trigger trigger;
 };
 
 struct request_state
@@ -172,6 +176,7 @@ struct map
     int* color_sequency;
     int** cells;
     char** thoughts;
+    long** cinematic_triggers;
     struct item **items;
 };
 
@@ -185,16 +190,19 @@ struct project
 {
     char* project_name;
     char* author_name;
-	int parameters[12];
+	int parameters[13];
     struct position character_positions[5]; //First positions of each character
 	struct request *requests[5]; //Requests for each of the 5 characters
     struct item inventories[5][40]; //Inventories for each of the 5 characters
     struct container *containers; //Content of items which have other items inside
 	struct zone *zones; //Different zones
+    struct cinematic *cinematics;
 	char modified; //True if the project has been modified since the last save
     char valid; //True if the project was valid at the last analysis
 };
 
+void free_cinematic_event(struct cinematic_event *c);
+void free_cinematic(struct cinematic *c);
 void free_container(struct container c);
 void free_map(struct map r);
 void free_project(struct project p);

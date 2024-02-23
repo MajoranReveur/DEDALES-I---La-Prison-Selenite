@@ -189,9 +189,62 @@ void write_knowledge(int character)
     fputc('\n', file);
 }
 
+void write_text(struct text t)
+{
+    write_int(t.length);
+    fputs(t.string, file);
+    fputc('\n', file);
+}
+
+void write_cinematic_event(struct cinematic_event c)
+{
+    write_int(c.type);
+    write_int(c.value1);
+    write_int(c.value2);
+    write_int(c.value3);
+    write_int(c.value4);
+    write_position(c.p);
+    write_position(c.target);
+    write_text(c.dialog);
+    fputc('\n', file);
+}
+
+void write_cinematic_trigger(struct cinematic_trigger c)
+{
+    write_int(c.type);
+    write_position(c.p);
+    write_int(c.value);
+    write_id(c.ID);
+    write_int(c.active);
+}
+
+void write_cinematic(struct cinematic c)
+{
+    write_int(c.length);
+    int i = 0;
+    while (i < c.length)
+    {
+        write_cinematic_event(c.events[i]);
+        i++;
+    }
+    write_cinematic_trigger(c.trigger);
+    fputc('\n', file);
+}
+
+void write_cinematic_list()
+{
+    int i = 0;
+    while (i < project_data.parameters[12])
+    {
+        write_cinematic(project_data.cinematics[i]);
+        i++;
+    }
+    fputc('\n', file);
+}
+
 void write_project(struct project p)
 {
-    write_int_list(p.parameters, 12);
+    write_int_list(p.parameters, 13);
     int i = 0;
     while (i < p.parameters[11])
     {
@@ -207,6 +260,7 @@ void write_project(struct project p)
         i++;
     }
     write_container_list(p.containers, p.parameters[10]);
+    write_cinematic_list();
 }
 
 void write_request_state(struct request_state r)

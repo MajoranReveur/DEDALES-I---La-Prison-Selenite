@@ -21,6 +21,7 @@ void load_input_long();
 void load_input_error();
 void string_input(char* rep, size_t length, char *instruction);
 int int_input(int n, int x, int y); //TODO
+void text_input(struct text *t, char *instruction);
 const char* get_key_name(int i);
 void input_editor();
 

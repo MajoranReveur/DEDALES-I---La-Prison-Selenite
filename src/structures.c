@@ -14,11 +14,13 @@ void free_map(struct map r)
         free(r.cells[i]);
         free(r.items[i]);
         free(r.thoughts[i]);
+        free(r.cinematic_triggers[i]);
         i++;
     }
     free(r.cells);
     free(r.items);
     free(r.thoughts);
+    free(r.cinematic_triggers);
     free(r.color_sequency);
 }
 
@@ -111,6 +113,31 @@ void free_zone(struct zone z)
     free(z.maps);
 }
 
+void free_text(struct text *t)
+{
+    free(t->string);
+    t->string = NULL;
+    t->length = 0;
+}
+
+void free_cinematic_event(struct cinematic_event *c)
+{
+    free_text(&(c->dialog));
+}
+
+void free_cinematic(struct cinematic *c)
+{
+    int i = 0;
+    while (i < c->length)
+    {
+        free_cinematic_event(c->events + i);
+        i++;
+    }
+    free(c->events);
+    c->events = NULL;
+    c->length = 0;
+}
+
 void free_save_data(struct savedatas s)
 {
     free(s.request_states);
@@ -127,12 +154,6 @@ void free_project(struct project p)
     int i = 0;
     while (i < 5)
     {
-        int j = 0;
-        while (j < p.parameters[i + 5])
-        {
-            free(p.requests[i][j].objective.password.string);
-            j++;
-        }
         free(p.requests[i]);
         i++;
     }
@@ -147,6 +168,12 @@ void free_project(struct project p)
     while (i < p.parameters[10])
     {
         free_container(p.containers[i]);
+        i++;
+    }
+    i = 0;
+    while (i < p.parameters[12])
+    {
+        free_cinematic(p.cinematics + i);
         i++;
     }
     free(p.containers);

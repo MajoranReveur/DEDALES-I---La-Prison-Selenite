@@ -186,7 +186,7 @@ char load_text(struct text *t)
         return 0;
     char c = fgetc(file);
     int i = 0;
-    while (c != 0 && c != EOF && c != '\n' && i < value)
+    while (c != 0 && c != EOF && i < value)
     {
         t->string[i] = c;
         c = fgetc(file);
@@ -227,8 +227,6 @@ char load_mission(struct mission *m)
         return 0;
     m->activated = value;
     //m->activated = 1;
-    m->password.length = 0;
-    m->password.string = NULL;
     return check_endline();
 }
 
@@ -258,6 +256,135 @@ char load_request_list(struct request *list, int size)
         return 0;
     return check_endline();
 }
+
+char load_cinematic_event(struct cinematic_event *c)
+{
+    c->dialog.length = 0; c->dialog.string = NULL;
+    int value = 0;
+    if (!load_int(&value))
+        return 0;
+    c->type = value;
+    if (!load_int(&value))
+        return 0;
+    c->value1 = value;
+    if (!load_int(&value))
+        return 0;
+    c->value2 = value;
+    if (!load_int(&value))
+        return 0;
+    c->value3 = value;
+    if (!load_int(&value))
+        return 0;
+    c->value4 = value;
+    struct position p;
+    if (!load_position(&p))
+        return 0;
+    c->p = p;
+    if (!load_position(&p))
+        return 0;
+    c->target = p;
+    struct text t; t.length = 0; t.string = NULL;
+    if (!load_text(&t))
+        return 0;
+    c->dialog = t;
+    return check_endline();
+}
+
+char load_cinematic_event_list(struct cinematic_event *list, int size)
+{
+    int i = 0;
+    char valid = 1;
+    while (i < size && valid)
+    {
+        valid = load_cinematic_event(list + i);
+        i++;
+    }
+    if (!valid)
+    {
+        while (i)
+        {
+            i--;
+            free_cinematic_event(list + i);
+        }
+        return 0;
+    }
+    return 1;
+}
+
+char load_cinematic_trigger(struct cinematic_trigger *c)
+{
+    int value = 0;
+    if (!load_int(&value))
+        return 0;
+    c->type = value;
+    struct position p;
+    if (!load_position(&p))
+        return 0;
+    c->p = p;
+    if (!load_int(&value))
+        return 0;
+    c->value = value;
+    long ID = 0;
+    if (!load_id(&ID))
+        return 0;
+    c->ID = ID;
+    char b = 0;
+    if (!load_char(&b))
+        return 0;
+    c->active = b;
+    return 1;
+}
+
+char load_cinematic(struct cinematic *c)
+{
+    c->length = 0; c->events = NULL;
+    int value = 0;
+    if (!load_int(&value))
+        return 0;
+    c->length = value;
+    c->events = malloc(sizeof(struct cinematic_event) * value);
+    if (c->events == NULL)
+        return 0;
+    if (!load_cinematic_event_list(c->events, value))
+    {
+        c->length = 0;
+        free(c->events);
+        c->events = NULL;
+        return 0;
+    }
+    struct cinematic_trigger ct;
+    if (!load_cinematic_trigger(&ct))
+    {
+        c->length = 0;
+        free(c->events);
+        c->events = NULL;
+        return 0;
+    }
+    c->trigger = ct;
+    return check_endline();
+}
+
+char load_cinematic_list(struct cinematic *list, int size)
+{
+    int i = 0;
+    char valid = 1;
+    while (i < size && valid)
+    {
+        valid = load_cinematic(list + i);
+        i++;
+    }
+    if (!valid)
+    {
+        while (i)
+        {
+            i--;
+            free_cinematic(list + i);
+        }
+        return 0;
+    }
+    return check_endline();
+}
+
 
 char load_map(struct map *m)
 {
@@ -297,6 +424,14 @@ char load_map(struct map *m)
         free(m->items);
         return 0;
     }
+    m->cinematic_triggers = malloc(sizeof(long*) * m->x);
+    if (m->cinematic_triggers == NULL)
+    {
+        free(m->thoughts);
+        free(m->cells);
+        free(m->items);
+        return 0;
+    }
     if (m->color_length)
     {
         m->color_sequency = malloc(sizeof(int) * m->color_length);
@@ -323,7 +458,8 @@ char load_map(struct map *m)
         m->cells[i] = malloc(sizeof(int) * m->y);
         m->thoughts[i] = malloc(sizeof(char) * m->y);
         m->items[i] = malloc(sizeof(struct item) * m->y);
-        valid = (m->cells[i] != NULL && m->items[i] != NULL && m->thoughts[i] != NULL);
+        m->cinematic_triggers[i] = malloc(sizeof(long) * m->y);
+        valid = (m->cells[i] != NULL && m->items[i] != NULL && m->thoughts[i] != NULL && m->cinematic_triggers[i] != NULL);
         i++;
     }
     if (valid)
@@ -346,12 +482,14 @@ char load_map(struct map *m)
         {
             free(m->cells[i]);
             free(m->items[i]);
+            free(m->cinematic_triggers[i]);
             free(m->thoughts[i]);
             i++;
         }
         free(m->cells);
         free(m->items);
         free(m->thoughts);
+        free(m->cinematic_triggers);
         free(m->color_sequency);
         m->x = 0;
         m->cells = NULL;
@@ -492,6 +630,7 @@ char load_save()
     if (c == EOF)
         return 0;
     struct project p;
+    p.cinematics = NULL;
     struct savedatas s;
     long i = 0;
     while (i < 5)
@@ -500,26 +639,18 @@ char load_save()
         i++;
     }
     i = 0;
-    while (i < 12)
+    while (i < 13)
     {
         p.parameters[i] = project_data.parameters[i];
         i++;
     }
+    p.parameters[12] = 0;
     i = 0;
     char valid = 1;
     while (i < 5 && valid)
     {
         p.requests[i] = malloc(sizeof(struct request) * project_data.parameters[i + 5]);
         valid = valid && (p.requests[i] != NULL);
-        if (valid)
-        {
-            int j = 0;
-            while (j < project_data.parameters[i + 5])
-            {
-                p.requests[i][j].objective.password.string = NULL;
-                j++;
-            }
-        }
         i++; 
     }
     while (!valid && i)
@@ -529,7 +660,6 @@ char load_save()
     }
     if (!valid)
         return 0;
-    print_error("a");
     int player = 0;
     valid = load_int(&player);
     if (!valid)
@@ -554,7 +684,6 @@ char load_save()
         }
         return 0;
     }
-    print_error("b");
     p.zones = malloc(sizeof(struct zone) * project_data.parameters[11]);
     if (p.zones == NULL)
     {
@@ -579,9 +708,9 @@ char load_save()
         p.containers = malloc(sizeof(struct container) * project_data.parameters[10]);
         valid = p.containers != NULL;
     }
-    print_error("c");
     if (!valid)
     {
+        free_save_data(s);
         free(p.containers);
         free(p.zones);
         i = 0;
@@ -632,16 +761,11 @@ char load_save()
         i++;
     }
     valid = valid && (fgetc(file) == EOF);
-    print_error("d");
     if (!valid)
     {
         free_save_data(s);
         free_project(p);
-        return 0;
     }
-
-
-    print_error("e");
     i = 0;
     while (i < 5)
     {
@@ -661,14 +785,12 @@ char load_save()
         }
         i++;
     }
-    print_error("f");
     i = 0;
     while (i < 4 + project_data.zones[0].map_number + project_data.zones[4].map_number)
     {
         save_data.request_states[i] = s.request_states[i];
         i++;
     }
-    print_error("g");
     i = 0;
     while (i < project_data.parameters[11])
     {
@@ -717,17 +839,14 @@ char load_save()
         i++;
     }
     reload_with_character(player);
-    print_error("h");
     free_save_data(s);
-    print_error("i");
     free_project(p);
-    print_error("j");
     return 1;
 }
 
 char load_project(struct project *p)
 {
-    char valid = load_int_list(p->parameters, 12);
+    char valid = load_int_list(p->parameters, 13);
     if (!valid)
         return 0;
     p->zones = malloc(sizeof(struct zone) * p->parameters[11]);
@@ -751,15 +870,6 @@ char load_project(struct project *p)
     {
         p->requests[i] = malloc(sizeof(struct request) * p->parameters[i + 5]);
         valid = valid && (p->requests[i] != NULL);
-        if (valid)
-        {
-            int j = 0;
-            while (j < p->parameters[i + 5])
-            {
-                p->requests[i][j].objective.password.string = NULL;
-                j++;
-            }
-        }
         i++;
     }
     while (i && !valid)
@@ -773,22 +883,18 @@ char load_project(struct project *p)
         return 0;
     }
     p->containers = malloc(sizeof(struct container) * p->parameters[10]);
-    valid = p->containers != NULL;
+    p->cinematics = malloc(sizeof(struct cinematic) * p->parameters[12]);
+    valid = p->containers != NULL && p->cinematics;
     if (!valid)
     {
         i = 0;
         while (i < 5)
         {
-            int j = 0;
-            while (j < p->parameters[i + 5] && p->requests[i])
-            {
-                free(p->requests[i][j].objective.password.string);
-                j++;
-            }
             free(p->requests[i]);
             i++;
         }
         free(p->containers);
+        free(p->cinematics);
         free(p->zones);
         return 0;
     }
@@ -796,6 +902,13 @@ char load_project(struct project *p)
     while (i < p->parameters[10])
     {
         p->containers[i].items = NULL;
+        i++;
+    }
+    i = 0;
+    while (i < p->parameters[12])
+    {
+        p->cinematics[i].length = 0;
+        p->cinematics[i].events = NULL;
         i++;
     }
     i = 0;
@@ -822,12 +935,13 @@ char load_project(struct project *p)
     }
     if (valid)
         valid = load_container_list(p->containers, p->parameters[10]);
+    if (valid)
+        valid = load_cinematic_list(p->cinematics, p->parameters[12]);
     if (!valid)
     {
         free_project(*p);
         return 0;
     }
-    //struct request r = project_data.requests[0][0];
     return (fgetc(file) == EOF);
 }
 
@@ -868,7 +982,7 @@ char open_project(struct project *p)
 
 char open_save(int spot)
 {
-    print_error("loading");
+    //print_error("loading");
     char number[2] = {spot + '0', 0};
     const char* file_fields[3] = {
         "levels/saves/save",

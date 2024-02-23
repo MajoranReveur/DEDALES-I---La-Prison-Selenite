@@ -200,6 +200,60 @@ char position_choice_map(int zone, struct position *p)
     return 0;
 }
 
+char position_choice_all_zone(struct position *p)
+{
+    char quit = 0;
+    if (p->zone)
+    {
+        if (position_choice_map(p->zone - 1, p))
+        {
+            clean_inputs();
+            return 1;
+        }
+    }
+    while(!inputs[0] && !quit)
+    {
+        int i = 0;
+        rect(0, 0, 1104, 704, 0, 0, 0);
+        print_text_centered(0, 10, project_data.project_name, 0, 1, 1104);
+        print_text_centered(0, 50, project_data.author_name, 1, 1, 1104);
+        print_text_centered(0, 100, "- Cartes -", 1, 1, 1104);
+        inputs[5] = 0;
+        while (!inputs[0] && !inputs[5] && !inputs[6])
+        {
+            print_text_centered(0, 300, "Entrepot", 1, 1 + (i == 0), 1104);
+            print_text_centered(0, 300, "Cle", 1, 1 + (i == 1), 1104);
+            print_text_centered(0, 350, "Cauchemar", 1, 1 + (i == 2), 1104);
+            print_text_centered(0, 300, "Songe", 1, 1 + (i == 3), 1104);
+            print_text_centered(0, 350, "Oubliettes", 1, 1 + (i == 4), 1104);
+            print_text_centered(0, 400, "Retour", 1, 1 + (i == 5), 1104);
+            print_refresh();
+            load_input_long();
+            if (inputs[1])
+                i = (i + 5) % 6;
+            if (inputs[2])
+                i = (i + 1) % 6;
+        }
+        if (inputs[5])
+        {
+            if (i < 2)
+            {
+                if (position_choice_map(i, p))
+                {
+                    clean_inputs();
+                    return 1;
+                }
+            }
+            if (i == 2)
+                quit = 1;
+        }
+        if (inputs[6])
+            quit = 1;
+    }
+    clean_inputs();
+    return 0;
+}
+
 char position_choice_zone(struct position *p)
 {
     char quit = 0;
@@ -486,14 +540,15 @@ void modify_project_menu()
             print_text_centered(0, 100, "- Modification de Projet -", 1, 1, 1104);
             print_text_centered(0, 200, "Cartes", 1, 1 + (i == 0), 1104);
             print_text_centered(0, 250, "Personnages", 1, 1 + (i == 1), 1104);
-            print_text_centered(0, 300, "Parametres", 1, 1 + (i == 2), 1104);
-            print_text_centered(0, 350, "Retour", 1, 1 + (i == 3), 1104);
+            print_text_centered(0, 300, "Cinematiques", 1, 1 + (i == 2), 1104);
+            print_text_centered(0, 350, "Parametres", 1, 1 + (i == 3), 1104);
+            print_text_centered(0, 400, "Retour", 1, 1 + (i == 4), 1104);
             print_refresh();
             load_input_long();
             if (inputs[1])
-                i = (i + 3) % 4;
+                i = (i + 4) % 5;
             if (inputs[2])
-                i = (i + 1) % 4;
+                i = (i + 1) % 5;
         }
         if (inputs[5])
         {
@@ -501,7 +556,9 @@ void modify_project_menu()
                 zone_choice_menu();
             if (i == 1)
                 character_menu();
-            if (i == 3)
+            if (i == 2)
+                cinematic_editor_menu();
+            if (i == 4)
                 quit = 1;
         }
         if (inputs[6])
