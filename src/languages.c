@@ -76,6 +76,7 @@ char string_load(FILE* file, char** result)
 		b = fgetc(file);
 	}
 	*result = str;
+	print_error(str);
 	return 1;
 }
 

@@ -414,7 +414,7 @@ void text_input(struct text *t, char *instruction)
 			print_error("No Memory");
 			return;
 		}
-		t->length = 101;
+		t->length = 100;
 	}
 	size_t lines = update_text_lines(new_lines, cameras, t->string);
 	char ending = (inputs[0] != 0);
@@ -430,7 +430,7 @@ void text_input(struct text *t, char *instruction)
 	{
 		if (t->length == len && len)
 		{
-			char* new_string = realloc(t->string, sizeof(char) * (len + 100));
+			char* new_string = realloc(t->string, sizeof(char) * (len + 101));
 			if (new_string)
 			{
 				t->string = new_string;
@@ -573,7 +573,7 @@ void text_input(struct text *t, char *instruction)
 	}
 	if (ending == 1)
 		inputs[0] = 1;
-	char* new_string = realloc(t->string, sizeof(char) * len);
+	char* new_string = realloc(t->string, sizeof(char) * (len + 1));
 	if (new_string)
 		t->string = new_string;
 	t->length = len;

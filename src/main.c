@@ -18,10 +18,10 @@ int main(int argc, char** argv)
 	file_loaded = 0;
 	file_saved = 1;
 	default_inputs();
-	if (!language_load("francais", 1))
+	if (!print_init("res/fonts/pixelmix.ttf"))
 		return 0;
 	update_texts();
-	if (print_init("res/fonts/pixelmix.ttf"))
+	if (language_load("francais", 1))
 	{
 		//input_editor();
 		char* spritesheets[] = {

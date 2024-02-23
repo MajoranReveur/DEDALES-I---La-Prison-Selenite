@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <io.h>
 #include "tools.h"
+#include "print.h"
 
 char** main_menu_texts;
 char** menu_texts;
