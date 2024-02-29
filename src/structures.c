@@ -176,6 +176,7 @@ void free_project(struct project p)
         free_cinematic(p.cinematics + i);
         i++;
     }
+    free(p.cinematics);
     free(p.containers);
     file_loaded = 0;
 }

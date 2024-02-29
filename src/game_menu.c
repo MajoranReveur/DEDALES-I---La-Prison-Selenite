@@ -207,6 +207,7 @@ void pause_menu()
     clean_inputs();
     while (!inputs[0] && !inputs[6])
     {
+        clean_inputs();
         display_current_screen(project_data.character_positions[player]);
         rect_alpha(0, 0, 704, 704, 0, 0, 0, 150);
         while (!inputs[0] && !inputs[6] && !inputs[5])
@@ -216,15 +217,17 @@ void pause_menu()
             print_text_centered(60, 70, "MENU", 0, 1, 584);
             print_text_centered(60, 150, "Inventaire", 1, 1 + (i == 0), 584);
             print_text_centered(60, 200, "Carte", 1, 1 + (i == 1), 584);
-            print_text_centered(60, 250, "Sauvegarder", 1, 1 + (i == 2), 584);
-            print_text_centered(60, 300, "Charger une Sauvegarde", 1, 1 + (i == 3), 584);
-            print_text_centered(60, 350, "Reprendre", 1, 1 + (i == 4), 584);
+            print_text_centered(60, 250, "Quitter le Portail", 1, 1 + (i == 2), 584);
+            print_text_centered(60, 300, "Sauvegarder", 1, 1 + (i == 3), 584);
+            print_text_centered(60, 350, "Charger une Sauvegarde", 1, 1 + (i == 4), 584);
+            print_text_centered(60, 400, "Reprendre", 1, 1 + (i == 5), 584);
+            print_text_centered(60, 450, "Retour au Menu Principal", 1, 1 + (i == 6), 584);
             print_refresh();
             load_input_long();
             if (inputs[1])
-                i = (i + 4) % 5;
+                i = (i + 6) % 7;
             if (inputs[2])
-                i = (i + 1) % 5;
+                i = (i + 1) % 7;
         }
         if (inputs[5])
         {
@@ -233,11 +236,20 @@ void pause_menu()
             if (i == 1)
                 map_menu(project_data.character_positions[player].zone);
             if (i == 2)
-                save_choice_for_save();
-            if (i == 3)
-                save_choice_for_load();
-            if (i == 4)
+            {
+                int player = get_player();		
+                struct position p_player = project_data.character_positions[player];
+                quit_portal(p_player.zone, p_player.map, player);
                 inputs[6] = 1;
+            }
+            if (i == 3)
+                save_choice_for_save();
+            if (i == 4)
+                save_choice_for_load();
+            if (i >= 5)
+                inputs[6] = 1;
+            if (i == 6)
+                end_game();
         }
     }
     clean_inputs();

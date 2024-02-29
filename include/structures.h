@@ -58,6 +58,7 @@ Project parameters :
 11 - Number of zones (cannot be less than 5)
 12 - Number of cinematics
 */
+
 struct portal
 {
     int type;

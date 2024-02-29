@@ -541,6 +541,7 @@ void get_younger_spot()
 		{
 			date = new_date;
 			spot = i;
+			is_valid = 1;
 		}
 		i++;
 	}

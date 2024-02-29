@@ -16,6 +16,11 @@ char is_savable()
     return savable;
 }
 
+void end_game()
+{
+    endgame = 1;
+}
+
 void reset_cinematic_triggers()
 {
     int z = 0;
@@ -1113,6 +1118,8 @@ void reboot_portal(int zone, int map, int player)
                 save_data.portals[i].type = 0;
                 save_data.portals[i].value = 0;
             }
+            if (i == player)
+                map_changed = 1;
         }
         i++;
     }
@@ -1177,6 +1184,7 @@ void reload_with_character(int character)
     player = character;
     update_perception(player);
     update_request_positions();
+    reset_cinematic_triggers();
     in_motion = 0;
     map_changed = 1;
 }
@@ -1313,7 +1321,12 @@ void main_loop()
         display_notifications();
         print_refresh();
         load_input();
+        if (inputs[18])
+            quit_portal(p_player.zone, p_player.map, player);
+        if (map_changed)
+            in_motion = 0;
         p_player = project_data.character_positions[player];
+        
         if (!in_motion && !map_changed && inputs[5])
         {
             if (is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
@@ -1364,6 +1377,11 @@ void main_loop()
                 p_player.orientation = 2;
             if (inputs[4])
                 p_player.orientation = 3;
+            project_data.character_positions[player] = p_player;
+            p_player = project_data.character_positions[player];
+            display_current_screen(p_player);
+            display_notifications();
+            print_refresh();
             if (inputs[1] || inputs[2] || inputs[3] || inputs[4])
             {
                 first_move = 1;
@@ -1554,20 +1572,13 @@ void main_loop()
             }
             if (!in_motion && p_player.zone == 2 && project_data.zones[p_player.zone - 1].maps[p_player.map].remaining_green_cells == 0)
             {
-                //print_error("Wait");
+                //Portal is activated
                 struct position p = save_data.portals[player].portal_position;
-                //print_error_int(p.zone);
-                //print_error_int(p.map);
-                //print_error_int(p.x);
-                //print_error_int(p.y);
                 project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].activation = 1;
-                //print_error_int(4);
+                //make the player leave the portal
                 project_data.character_positions[player] = p_player;
-                //print_error_int(5);
                 quit_portal(p_player.zone, p_player.map, player);
                 p_player = project_data.character_positions[player];
-                //print_error_int(6);
-                map_changed = 1;
             }
         }
         project_data.character_positions[player] = p_player;

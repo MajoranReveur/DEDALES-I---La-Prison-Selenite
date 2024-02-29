@@ -760,11 +760,25 @@ char load_save()
         valid = load_request_list(p.requests[i], project_data.parameters[5 + i]);
         i++;
     }
-    valid = valid && (fgetc(file) == EOF);
     if (!valid)
     {
         free_save_data(s);
         free_project(p);
+        return 0;
+    }
+    char* cinematic_states = malloc(sizeof(char) * project_data.parameters[12]);
+    valid = cinematic_states != NULL;
+    if (valid)
+    {
+        valid = load_char_list(cinematic_states, project_data.parameters[12]);
+    }
+    valid = valid && (fgetc(file) == EOF);
+    if (!valid)
+    {
+        free(cinematic_states);
+        free_save_data(s);
+        free_project(p);
+        return 0;
     }
     i = 0;
     while (i < 5)
@@ -838,7 +852,15 @@ char load_save()
         }
         i++;
     }
+    i = 0;
+    while (i < project_data.parameters[12])
+    {
+        project_data.cinematics[i].trigger.active = cinematic_states[i];
+        print_error_int(cinematic_states[i]);
+        i++;
+    }
     reload_with_character(player);
+    free(cinematic_states);
     free_save_data(s);
     free_project(p);
     return 1;

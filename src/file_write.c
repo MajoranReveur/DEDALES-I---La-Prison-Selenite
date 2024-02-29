@@ -21,7 +21,6 @@ void write_int_list(int* list, int size)
     fputc('\n', file);
 }
 
-
 void write_char_list(char* list, int size)
 {
     int i = 0;
@@ -58,6 +57,18 @@ void write_item_list(struct item *list, int size)
     while (i < size)
     {
         write_item(list[i]);
+        i++;
+    }
+    fputc('\n', file);
+}
+
+
+void write_cinematic_states_list(struct cinematic *list, int size)
+{
+    int i = 0;
+    while (i < size)
+    {
+        write_int(list[i].trigger.active);
         i++;
     }
     fputc('\n', file);
@@ -310,6 +321,7 @@ void write_save_data()
         write_request_list(project_data.requests[i], project_data.parameters[i + 5]);
         i++;
     }
+    write_cinematic_states_list(project_data.cinematics, project_data.parameters[12]);
 }
 
 char save_project(struct project p)

@@ -222,11 +222,11 @@ char position_choice_all_zone(struct position *p)
         while (!inputs[0] && !inputs[5] && !inputs[6])
         {
             print_text_centered(0, 300, "Entrepot", 1, 1 + (i == 0), 1104);
-            print_text_centered(0, 300, "Cle", 1, 1 + (i == 1), 1104);
-            print_text_centered(0, 350, "Cauchemar", 1, 1 + (i == 2), 1104);
-            print_text_centered(0, 300, "Songe", 1, 1 + (i == 3), 1104);
-            print_text_centered(0, 350, "Oubliettes", 1, 1 + (i == 4), 1104);
-            print_text_centered(0, 400, "Retour", 1, 1 + (i == 5), 1104);
+            print_text_centered(0, 350, "Cle", 1, 1 + (i == 1), 1104);
+            print_text_centered(0, 400, "Cauchemar", 1, 1 + (i == 2), 1104);
+            print_text_centered(0, 450, "Songe", 1, 1 + (i == 3), 1104);
+            print_text_centered(0, 500, "Oubliettes", 1, 1 + (i == 4), 1104);
+            print_text_centered(0, 550, "Retour", 1, 1 + (i == 5), 1104);
             print_refresh();
             load_input_long();
             if (inputs[1])
@@ -236,7 +236,7 @@ char position_choice_all_zone(struct position *p)
         }
         if (inputs[5])
         {
-            if (i < 2)
+            if (i < 5)
             {
                 if (position_choice_map(i, p))
                 {
@@ -244,7 +244,7 @@ char position_choice_all_zone(struct position *p)
                     return 1;
                 }
             }
-            if (i == 2)
+            if (i == 5)
                 quit = 1;
         }
         if (inputs[6])
