@@ -35,7 +35,7 @@ void reset_cinematic_triggers()
                 int y = 0;
                 while (y < project_data.zones[z].maps[m].y)
                 {
-                    project_data.zones[z].maps[m].cinematic_triggers[x][y] = 0;
+                    project_data.zones[z].maps[m].cells[x][y].cinematic_trigger = 0;
                     y++;
                 }
                 x++;
@@ -54,9 +54,9 @@ void reset_cinematic_triggers()
             if (type == 1 || type == 2)
             {
                 struct position p = project_data.cinematics[i].trigger.p;
-                if (project_data.zones[p.zone - 1].maps[p.map].cinematic_triggers[p.x][p.y] == 0)
+                if (project_data.zones[p.zone - 1].maps[p.map].cells[p.x][p.y].cinematic_trigger == 0)
                 {
-                    project_data.zones[p.zone - 1].maps[p.map].cinematic_triggers[p.x][p.y] = i + 1;
+                    project_data.zones[p.zone - 1].maps[p.map].cells[p.x][p.y].cinematic_trigger = i + 1;
                 }
             }
         }
@@ -117,7 +117,7 @@ void handle_cinematic(long id)
     if (type == 1 || type == 2)
     {
         struct position p = project_data.cinematics[id].trigger.p;
-        project_data.zones[p.zone - 1].maps[p.map].cinematic_triggers[p.x][p.y] = find_another_cinematic_position(p, 0);
+        project_data.zones[p.zone - 1].maps[p.map].cells[p.x][p.y].cinematic_trigger = find_another_cinematic_position(p, 0);
     }
     map_changed = 1;
 }
@@ -218,7 +218,7 @@ void update_active_requests()
 void display_current_screen(struct position camera)
 {
     rect(0, 0, 704, 704, 0, 0, 0);
-    if (project_data.parameters[11] >= camera.zone)
+    if (project_data.parameters[11] >= camera.zone && camera.zone)
     {
         if (project_data.zones[camera.zone - 1].map_number > camera.map)
         {
@@ -229,6 +229,11 @@ void display_current_screen(struct position camera)
         if (camera.zone == 1 || camera.zone == 5)
             display_map_shadow_character(camera.x - 40, camera.y - 40, camera.map, camera.zone, player);
         display_sprite(4, (project_data.character_positions[player].x - camera.x + 40) * 8,  (project_data.character_positions[player].y - camera.y + 40) * 8 - 16, 
+        64, player * 4 + project_data.character_positions[player].orientation, project_data.character_positions[player].x % 8 + project_data.character_positions[player].y % 8);
+    }
+    if (!camera.zone)
+    {
+        display_sprite(4, (project_data.character_positions[player].x - camera.x + 40) * 8,  (project_data.character_positions[player].y - camera.y + 40) * 8 - 16,
         64, player * 4 + project_data.character_positions[player].orientation, project_data.character_positions[player].x % 8 + project_data.character_positions[player].y % 8);
     }
 }
@@ -329,17 +334,23 @@ char is_in_map(int x, int y, int map, int zone)
     return (x >= 0 && x < project_data.zones[zone - 1].maps[map].x && y >= 0 && y < project_data.zones[zone - 1].maps[map].y);
 }
 
-int get_current_cell(struct position p_player)
+struct cell get_current_cell(struct position p_player)
 {
     if (!is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
-        return 2;
+    {
+        struct cell c;
+        c.type = 2; c.thought = 0; c.item.type = 0; c.sprite = 0; c.cinematic_trigger = 0; c.first_sprite = 0;
+        return c;
+    }
     return project_data.zones[p_player.zone - 1].maps[p_player.map].cells[p_player.x / 8][p_player.y / 8];
 }
 
-int get_front_cell(struct position p_player)
+struct cell get_front_cell(struct position p_player)
 {
+    struct cell c;
+    c.type = 2; c.thought = 0; c.item.type = 0; c.sprite = 0; c.cinematic_trigger = 0; c.first_sprite = 0;
     if (!is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
-        return 2;
+        return c;
     int dx = 0;
     int dy = 0;
     if (p_player.orientation == 1)
@@ -353,7 +364,7 @@ int get_front_cell(struct position p_player)
     int x = p_player.x / 8 + dx;
     int y = p_player.y / 8 + dy;
     if (!is_in_map(x, y, p_player.map, p_player.zone))
-        return 2;
+        return c;
     return project_data.zones[p_player.zone - 1].maps[p_player.map].cells[x][y];
 }
 
@@ -383,7 +394,7 @@ struct item get_front_item(struct position p_player)
         i.type = 0;
         return i;
     }
-    return project_data.zones[p_player.zone - 1].maps[p_player.map].items[x][y];
+    return project_data.zones[p_player.zone - 1].maps[p_player.map].cells[x][y].item;
 }
 
 void delete_front_item(struct position p_player)
@@ -404,7 +415,7 @@ void delete_front_item(struct position p_player)
     int y = p_player.y / 8 + dy;
     if (!is_in_map(x, y, p_player.map, p_player.zone))
         return;
-    project_data.zones[p_player.zone - 1].maps[p_player.map].items[x][y].type = 0;
+    project_data.zones[p_player.zone - 1].maps[p_player.map].cells[x][y].item.type = 0;
 }
 
 struct item get_item_from_request(struct request r)
@@ -1057,16 +1068,16 @@ void take_item_position(struct position p, int character)
 {
     if (is_in_map(p.x / 8, p.y / 8, p.map, p.zone))
     {
-        struct item objet = project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8];
+        struct item objet = project_data.zones[p.zone - 1].maps[p.map].cells[p.x / 8][p.y / 8].item;
         if (objet.type == 14)
         {
             objet.value = p.map + 1;
-            project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8] = objet;
+            project_data.zones[p.zone - 1].maps[p.map].cells[p.x / 8][p.y / 8].item = objet;
         }
         if (can_take_item(character, objet, 1))
         {
             take_item(character, objet);
-            project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].type = 0;
+            project_data.zones[p.zone - 1].maps[p.map].cells[p.x / 8][p.y / 8].item.type = 0;
             add_item_notification(objet);
         }
         else
@@ -1083,8 +1094,8 @@ void reboot_portal(int zone, int map, int player)
         int j = 0;
         while (j < project_data.zones[zone - 1].maps[map].y)
         {
-            project_data.zones[zone - 1].maps[map].cells[i][j] = backup_data.zones[zone - 1].maps[map].cells[i][j];
-            project_data.zones[zone - 1].maps[map].items[i][j] = backup_data.zones[zone - 1].maps[map].items[i][j];
+            project_data.zones[zone - 1].maps[map].cells[i][j].type = backup_data.zones[zone - 1].maps[map].cells[i][j].type;
+            project_data.zones[zone - 1].maps[map].cells[i][j].item = backup_data.zones[zone - 1].maps[map].cells[i][j].item;
             j++;
         }
         i++;
@@ -1127,6 +1138,8 @@ void reboot_portal(int zone, int map, int player)
 
 void quit_portal(int zone, int map, int player)
 {
+    if (zone < 2 || zone == 5)
+        return;
     //print_error_int(zone);
     //print_error_int(map);
     reboot_portal(zone, map, player);
@@ -1310,6 +1323,7 @@ void dealing_with_request(int character, int value)
 
 void main_loop()
 {
+    clean_inputs();
     char first_move = 0;
     in_motion = 0;
     struct position p_player;
@@ -1329,9 +1343,10 @@ void main_loop()
         
         if (!in_motion && !map_changed && inputs[5])
         {
+            print_error("crash ?");
             if (is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
             {
-                struct item objet = project_data.zones[p_player.zone - 1].maps[p_player.map].items[p_player.x / 8][p_player.y / 8];
+                struct item objet = project_data.zones[p_player.zone - 1].maps[p_player.map].cells[p_player.x / 8][p_player.y / 8].item;
                 if (objet.type == 2 && p_player.zone == 1 && p_player.map > 0)
                 {
                     p_player.map--;
@@ -1366,6 +1381,7 @@ void main_loop()
                 if ((objet.type >= 7 && objet.type <= 15) || objet.type == 21)
                     take_item_position(p_player, player);
             }
+            print_error("Nope.");
         }
         if (!in_motion && !map_changed)
         {
@@ -1387,26 +1403,34 @@ void main_loop()
                 first_move = 1;
                 in_motion = 1;
             }
+            if (!is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
+            {
+                first_move = 0;
+                in_motion = 0;
+            }
         }
         //Cinematics when passing by a cell
         if (in_motion && !(p_player.x % 8 || p_player.y % 8))
         {
-            long cinematic_id = project_data.zones[p_player.zone - 1].maps[p_player.map].cinematic_triggers[p_player.x / 8][p_player.y / 8];
-            if (cinematic_id)
+            if (is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
             {
-                long id = cinematic_id;
-                while (id && project_data.cinematics[id - 1].trigger.type != 1)
+                long cinematic_id = project_data.zones[p_player.zone - 1].maps[p_player.map].cells[p_player.x / 8][p_player.y / 8].cinematic_trigger;
+                if (cinematic_id)
                 {
-                    id = find_another_cinematic_position(project_data.cinematics[id - 1].trigger.p, id);
+                    long id = cinematic_id;
+                    while (id && project_data.cinematics[id - 1].trigger.type != 1)
+                    {
+                        id = find_another_cinematic_position(project_data.cinematics[id - 1].trigger.p, id);
+                    }
+                    if (id)
+                        handle_cinematic(id - 1);
                 }
-                if (id)
-                    handle_cinematic(id - 1);
             }
         }
-        if (in_motion && !(p_player.x % 8 || p_player.y % 8))
+        if (in_motion && !(p_player.x % 8 || p_player.y % 8) && is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
         {
-            int cell = get_front_cell(p_player);
-            if (cell == 2)
+            struct cell cell = get_front_cell(p_player);
+            if (cell.type == 2)
                 in_motion = 0;
             else
             {
@@ -1445,6 +1469,8 @@ void main_loop()
                     in_motion = 0;
             }
         }
+        else
+            in_motion = 0;
         if (in_motion && first_move)
         {
             int i = 0;
@@ -1491,41 +1517,45 @@ void main_loop()
         {
             clean_inputs();
             int i = 0;
-            project_data.zones[p_player.zone - 1].maps[p_player.map].remaining_green_cells = 0;
-            while (i < project_data.zones[p_player.zone - 1].maps[p_player.map].x)
+            if (is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
             {
-                int j = 0;
-                while (j < project_data.zones[p_player.zone - 1].maps[p_player.map].y)
+                project_data.zones[p_player.zone - 1].maps[p_player.map].remaining_green_cells = 0;
+                while (i < project_data.zones[p_player.zone - 1].maps[p_player.map].x)
                 {
-                    if (project_data.zones[p_player.zone - 1].maps[p_player.map].cells[i][j] == 7)
-                        project_data.zones[p_player.zone - 1].maps[p_player.map].remaining_green_cells++;
-                    j++;
+                    int j = 0;
+                    while (j < project_data.zones[p_player.zone - 1].maps[p_player.map].y)
+                    {
+                        if (project_data.zones[p_player.zone - 1].maps[p_player.map].cells[i][j].type == 7)
+                            project_data.zones[p_player.zone - 1].maps[p_player.map].remaining_green_cells++;
+                        j++;
+                    }
+                    i++;
                 }
-                i++;
             }
             map_changed = 0;
+            in_motion = 0;
             update_request_positions();
-            int cell = get_current_cell(p_player);
-            if (cell >= 3 && cell <= 6)
+            struct cell cell = get_current_cell(p_player);
+            if (cell.type >= 3 && cell.type <= 6)
                 in_motion = 1;
-            if (cell == 3)
+            if (cell.type == 3)
                 p_player.orientation = 2;
-            if (cell == 4)
+            if (cell.type == 4)
                 p_player.orientation = 0;
-            if (cell == 5)
+            if (cell.type == 5)
                 p_player.orientation = 1;
-            if (cell == 6)
+            if (cell.type == 6)
                 p_player.orientation = 3;
-            if (cell == 8)
+            if (cell.type == 8)
             {
                 project_data.character_positions[player] = p_player;
                 quit_portal(p_player.zone, p_player.map, player);
                 p_player = project_data.character_positions[player];
                 map_changed = 1;
             }
-            if (cell == 7)
+            if (cell.type == 7)
             {
-                project_data.zones[p_player.zone - 1].maps[p_player.map].cells[p_player.x / 8][p_player.y / 8] = 8;
+                project_data.zones[p_player.zone - 1].maps[p_player.map].cells[p_player.x / 8][p_player.y / 8].type = 8;
                 project_data.zones[p_player.zone - 1].maps[p_player.map].remaining_green_cells--;
             }
         }
@@ -1546,27 +1576,27 @@ void main_loop()
             in_motion = (p_player.x % 8 || p_player.y % 8);
             if (!in_motion)
             {
-                int cell = get_current_cell(p_player);
-                if (cell == 1 || (cell >= 3 && cell <= 6))
+                struct cell cell = get_current_cell(p_player);
+                if (cell.type == 1 || (cell.type >= 3 && cell.type <= 6))
                     in_motion = 1;
-                if (cell == 3)
+                if (cell.type == 3)
                     p_player.orientation = 2;
-                if (cell == 4)
+                if (cell.type == 4)
                     p_player.orientation = 0;
-                if (cell == 5)
+                if (cell.type == 5)
                     p_player.orientation = 1;
-                if (cell == 6)
+                if (cell.type == 6)
                     p_player.orientation = 3;
-                if (cell == 8)
+                if (cell.type == 8)
                 {
                     project_data.character_positions[player] = p_player;
                     reboot_portal(p_player.zone, p_player.map, player);
                     p_player = project_data.character_positions[player];
                     map_changed = 1;
                 }
-                if (cell == 7)
+                if (cell.type == 7)
                 {
-                    project_data.zones[p_player.zone - 1].maps[p_player.map].cells[p_player.x / 8][p_player.y / 8] = 8;
+                    project_data.zones[p_player.zone - 1].maps[p_player.map].cells[p_player.x / 8][p_player.y / 8].type = 8;
                     project_data.zones[p_player.zone - 1].maps[p_player.map].remaining_green_cells--;
                 }
             }
@@ -1574,7 +1604,7 @@ void main_loop()
             {
                 //Portal is activated
                 struct position p = save_data.portals[player].portal_position;
-                project_data.zones[p.zone - 1].maps[p.map].items[p.x / 8][p.y / 8].activation = 1;
+                project_data.zones[p.zone - 1].maps[p.map].cells[p.x / 8][p.y / 8].item.activation = 1;
                 //make the player leave the portal
                 project_data.character_positions[player] = p_player;
                 quit_portal(p_player.zone, p_player.map, player);
@@ -1585,10 +1615,13 @@ void main_loop()
         //Cinematics when stop at a cell
         if (!in_motion && !map_changed && !(p_player.x % 8) && !(p_player.y % 8))
         {
-            long cinematic_id = project_data.zones[p_player.zone - 1].maps[p_player.map].cinematic_triggers[p_player.x / 8][p_player.y / 8];
-            if (cinematic_id)
+            if (is_in_map(p_player.x / 8, p_player.y / 8, p_player.map, p_player.zone))
             {
-                handle_cinematic(cinematic_id - 1);
+                long cinematic_id = project_data.zones[p_player.zone - 1].maps[p_player.map].cells[p_player.x / 8][p_player.y / 8].cinematic_trigger;
+                if (cinematic_id)
+                {
+                    handle_cinematic(cinematic_id - 1);
+                }
             }
         }
         savable = !in_motion && !map_changed;
@@ -1624,20 +1657,17 @@ void launch_game(char with_save, int save_spot)
         int j = 0;
         while (j < project_data.zones[i].map_number && valid)
         {
-            backup_data.zones[i].maps[j].cells = malloc(sizeof(int*) * project_data.zones[i].maps[j].x);
-            backup_data.zones[i].maps[j].items = malloc(sizeof(struct item*) * project_data.zones[i].maps[j].x);
-            valid = (backup_data.zones[i].maps[j].cells != NULL && backup_data.zones[i].maps[j].items != NULL);
+            backup_data.zones[i].maps[j].cells = malloc(sizeof(struct cell*) * project_data.zones[i].maps[j].x);
+            valid = (backup_data.zones[i].maps[j].cells != NULL);
             int x = 0;
             while (x < project_data.zones[i].maps[j].x && valid)
             {
-                backup_data.zones[i].maps[j].cells[x] = malloc(sizeof(int) * project_data.zones[i].maps[j].y);
-                backup_data.zones[i].maps[j].items[x] = malloc(sizeof(struct item) * project_data.zones[i].maps[j].y);
-                valid = (backup_data.zones[i].maps[j].cells[x] != NULL && backup_data.zones[i].maps[j].items[x] != NULL);
+                backup_data.zones[i].maps[j].cells[x] = malloc(sizeof(struct cell) * project_data.zones[i].maps[j].y);
+                valid = (backup_data.zones[i].maps[j].cells[x] != NULL);
                 int y = 0;
                 while (y < project_data.zones[i].maps[j].y && valid)
                 {
                     backup_data.zones[i].maps[j].cells[x][y] = project_data.zones[i].maps[j].cells[x][y];
-                    backup_data.zones[i].maps[j].items[x][y] = project_data.zones[i].maps[j].items[x][y];
                     y++;
                 }
                 x++;
@@ -1646,12 +1676,10 @@ void launch_game(char with_save, int save_spot)
             {
                 x--;
                 free(backup_data.zones[i].maps[j].cells[x]);
-                free(backup_data.zones[i].maps[j].items[x]);
             }
             if (!valid)
             {
                 free(backup_data.zones[i].maps[j].cells);
-                free(backup_data.zones[i].maps[j].items);
                 backup_data.zones[i].maps[j].cells = NULL;
             }
             j++;
@@ -1665,11 +1693,9 @@ void launch_game(char with_save, int save_spot)
                 while (x < project_data.zones[i].maps[j].x)
                 {
                     free(backup_data.zones[i].maps[j].cells[x]);
-                    free(backup_data.zones[i].maps[j].items[x]);
                     x++;
                 }
                 free(backup_data.zones[i].maps[j].cells);
-                free(backup_data.zones[i].maps[j].items);
             }
         }
         if (!valid)
@@ -1682,7 +1708,7 @@ void launch_game(char with_save, int save_spot)
     if (!valid)
     {
         free_backup();
-        free_save_data(save_data);
+        free_save_data(&save_data);
         print_error("Pas assez de memoire");
         return;
     }
@@ -1720,5 +1746,5 @@ void launch_game(char with_save, int save_spot)
         main_loop();
     }
     free_backup();
-    free_save_data(save_data);
+    free_save_data(&save_data);
 }

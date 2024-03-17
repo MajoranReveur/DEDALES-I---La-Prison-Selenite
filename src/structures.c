@@ -6,39 +6,36 @@ void free_container(struct container c)
     c.items = NULL;
 }
 
-void free_map(struct map r)
+void free_map(struct map *r)
 {
     int i = 0;
-    while (i < r.x)
+    if (r->cells != NULL)
     {
-        free(r.cells[i]);
-        free(r.items[i]);
-        free(r.thoughts[i]);
-        free(r.cinematic_triggers[i]);
-        i++;
-    }
-    free(r.cells);
-    free(r.items);
-    free(r.thoughts);
-    free(r.cinematic_triggers);
-    free(r.color_sequency);
-}
-
-void free_map_backup(int zone, int map)
-{
-    int i = 0;
-    
-    if (backup_data.zones[zone].maps[map].cells != NULL && backup_data.zones[zone].maps[map].items != NULL)
-    {
-        while (i < project_data.zones[zone].maps[map].x)
+        while (i < r->x)
         {
-            free(backup_data.zones[zone].maps[map].cells[i]);
-            free(backup_data.zones[zone].maps[map].items[i]);
+            free(r->cells[i]);
             i++;
         }
     }
-    free(backup_data.zones[zone].maps[map].cells);
-    free(backup_data.zones[zone].maps[map].items);
+    free(r->cells);
+    free(r->color_sequency);
+    r->cells = NULL;
+    r->color_sequency = NULL;
+}
+
+void free_map_backup(struct map_backup *map, int x)
+{
+    int i = 0;
+    if (map->cells != NULL)
+    {
+        while (i < x)
+        {
+            free(map->cells[i]);
+            i++;
+        }
+    }
+    free(map->cells);
+    map->cells = NULL;
 }
 
 void free_zone_backup(int zone)
@@ -48,11 +45,12 @@ void free_zone_backup(int zone)
     {
         while (i < project_data.zones[zone].map_number)
         {
-            free_map_backup(zone, i);
+            free_map_backup(backup_data.zones[zone].maps + i, project_data.zones[zone].maps[i].x);
             i++;
         }
     }
     free(backup_data.zones[zone].maps);
+    backup_data.zones[zone].maps = NULL;
 }
 
 void free_backup()
@@ -69,48 +67,60 @@ void free_backup()
     free(backup_data.zones);
 }
 
-void free_map_knowledge(struct map_knowledge m, int zone, int map)
+void free_map_knowledge(struct map_knowledge *m, int zone, int map)
 {
     int i = 0;
-    while (i < project_data.zones[zone].maps[map].x)
+    if (m->cells != NULL)
     {
-        free(m.cells[i]);
-        i++;
+        while (i < project_data.zones[zone].maps[map].x)
+        {
+            free(m->cells[i]);
+            i++;
+        }
     }
-    free(m.cells);
+    free(m->cells);
+    m->cells = NULL;
 }
 
-void free_zone_knowledge(struct zone_knowledge m, int zone)
+void free_zone_knowledge(struct zone_knowledge *m, int zone)
 {
     int i = 0;
-    while (i < project_data.zones[zone].map_number)
+    if (m->maps != NULL)
     {
-        free_map_knowledge(m.maps[i], zone, i);
-        i++;
+        while (i < project_data.zones[zone].map_number)
+        {
+            free_map_knowledge(m->maps + i, zone, i);
+            i++;
+        }
     }
-    free(m.maps);
+    free(m->maps);
+    m->maps = NULL;
 }
 
-void free_character_knowledge(struct character_knowledge m)
+void free_character_knowledge(struct character_knowledge *m)
 {
     int i = 0;
-    while (i < project_data.parameters[11])
+    if (m->zones != NULL)
     {
-        free_zone_knowledge(m.zones[i], i);
-        i++;
+        while (i < project_data.parameters[11])
+        {
+            free_zone_knowledge(m->zones + i, i);
+            i++;
+        }
     }
-    free(m.zones);
+    free(m->zones);
 }
 
-void free_zone(struct zone z)
+void free_zone(struct zone *z)
 {
     int i = 0;
-    while (i < z.map_number && z.maps != NULL)
+    while (i < z->map_number && z->maps != NULL)
     {
-        free_map(z.maps[i]);
+        free_map(z->maps + i);
         i++;
     }
-    free(z.maps);
+    free(z->maps);
+    z->maps = NULL;
 }
 
 void free_text(struct text *t)
@@ -138,13 +148,14 @@ void free_cinematic(struct cinematic *c)
     c->length = 0;
 }
 
-void free_save_data(struct savedatas s)
+void free_save_data(struct savedatas *s)
 {
-    free(s.request_states);
+    free(s->request_states);
+    s->request_states = NULL;
     int i = 0;
     while (i < 5)
     {
-        free_character_knowledge(s.knowledge[i]);
+        free_character_knowledge(s->knowledge + i);
         i++;
     }
 }
@@ -160,7 +171,7 @@ void free_project(struct project p)
     i = 0;
     while (i < p.parameters[11])
     {
-        free_zone(p.zones[i]);
+        free_zone(p.zones + i);
         i++;
     }
     free(p.zones);
@@ -192,7 +203,7 @@ void delete_container(long ID)
     if (last_container.zone == 0) // Inventory
         project_data.inventories[last_container.map][last_container.x].ID = ID;
     else
-        project_data.zones[last_container.zone - 1].maps[last_container.map].items[last_container.x][last_container.y].ID = ID;
+        project_data.zones[last_container.zone - 1].maps[last_container.map].cells[last_container.x][last_container.y].item.ID = ID;
     if (project_data.parameters[10])
     {
         //print_error_int(project_data.parameters[10]);

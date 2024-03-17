@@ -6,10 +6,12 @@ void project_create()
     string_input(name, 100, "Quel est votre pseudo ?");
     char project[301];
     string_input(project, 300, "Quel nom donner au projet ?");
+    print_error("A !");
     //Check if the project already exists
     char project_file_name[451];
     const char* file_name_parts[5] = {"levels/projects/", project, "[", name, "].txt"};
     concat_str(project_file_name, file_name_parts, 450, 5);
+    print_error("B !");
 	FILE* file = fopen(project_file_name, "r");
     if (file != NULL)
     {
@@ -23,6 +25,7 @@ void project_create()
     }
     else
     {
+        print_error("C !");
         int i = 0;
         project_data.zones = malloc(sizeof(struct zone) * 5);
         if (!project_data.zones)
@@ -31,6 +34,7 @@ void project_create()
             print_error("Erreur de memoire !");
             return;
         }
+        print_error("1");
         while (i < 11)
         {
             project_data.parameters[i] = 0;
@@ -38,6 +42,7 @@ void project_create()
         }
         project_data.parameters[11] = 5;
         i = 0;
+        print_error("2");
         while (i < 5)
         {
             project_data.character_positions[i].zone = 0;
@@ -48,7 +53,7 @@ void project_create()
             project_data.zones[i].maps = NULL;
             project_data.zones[i].map_number = 0;
             int j = 0;
-            while (j < 50)
+            while (j < 40)
             {
                 project_data.inventories[i][j].activation = 0;
                 project_data.inventories[i][j].ID = 0;
@@ -58,12 +63,14 @@ void project_create()
             }
             i++;
         }
+        print_error("3");
         project_data.author_name = name;
         project_data.project_name = project;
         project_data.containers = NULL;
         project_data.modified = 1;
         project_data.valid = 0;
         file_loaded = 1;
+        print_error("D !");
         project_menu();
     }
 }

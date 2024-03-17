@@ -62,6 +62,25 @@ void write_item_list(struct item *list, int size)
     fputc('\n', file);
 }
 
+void write_cell(struct cell c)
+{
+    write_int(c.type);
+    write_int(c.thought);
+    write_item(c.item);
+    write_int(c.sprite);
+    write_int(c.first_sprite);
+}
+
+void write_cell_list(struct cell *list, int size)
+{
+    int i = 0;
+    while (i < size)
+    {
+        write_cell(list[i]);
+        i++;
+    }
+    fputc('\n', file);
+}
 
 void write_cinematic_states_list(struct cinematic *list, int size)
 {
@@ -137,9 +156,7 @@ void write_map(struct map m)
     int i = 0;
     while (i < m.x)
     {
-        write_int_list(m.cells[i], m.y);
-        write_item_list(m.items[i], m.y);
-        write_char_list(m.thoughts[i], m.y);
+        write_cell_list(m.cells[i], m.y);
         i++;
     }
     fputc('\n', file);

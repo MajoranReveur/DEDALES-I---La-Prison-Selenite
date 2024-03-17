@@ -385,6 +385,34 @@ char load_cinematic_list(struct cinematic *list, int size)
     return check_endline();
 }
 
+char load_cell(struct cell *c)
+{
+    if (!load_int(&(c->type)))
+        return 0;
+    if (!load_char(&(c->thought)))
+        return 0;
+    if (!load_item(&(c->item)))
+        return 0;
+    if (!load_int(&(c->sprite)))
+        return 0;
+    if (!load_int(&(c->first_sprite)))
+        return 0;
+    return 1;
+}
+
+char load_cells_list(struct cell *list, int size)
+{
+    int i = 0;
+    char valid = 1;
+    while (i < size && valid)
+    {
+        valid = load_cell(list + i);
+        i++;
+    }
+    if (!valid)
+        return 0;
+    return check_endline();
+}
 
 char load_map(struct map *m)
 {
@@ -408,28 +436,10 @@ char load_map(struct map *m)
         return 0;
     m->color_length = value;
     m->color_sequency = NULL;
-    m->cells = malloc(sizeof(int*) * m->x);
+    m->cells = malloc(sizeof(struct cell*) * m->x);
     if (m->cells == NULL)
-        return 0;
-    m->items = malloc(sizeof(struct item*) * m->x);
-    if (m->items == NULL)
     {
         free(m->cells);
-        return 0;
-    }
-    m->thoughts = malloc(sizeof(char*) * m->x);
-    if (m->thoughts == NULL)
-    {
-        free(m->cells);
-        free(m->items);
-        return 0;
-    }
-    m->cinematic_triggers = malloc(sizeof(long*) * m->x);
-    if (m->cinematic_triggers == NULL)
-    {
-        free(m->thoughts);
-        free(m->cells);
-        free(m->items);
         return 0;
     }
     if (m->color_length)
@@ -438,8 +448,6 @@ char load_map(struct map *m)
         if (m->color_sequency == NULL)
         {
             free(m->cells);
-            free(m->items);
-            free(m->thoughts);
             return 0;
         }
     }
@@ -447,19 +455,14 @@ char load_map(struct map *m)
     while (i < m->x)
     {
         m->cells[i] = NULL;
-        m->items[i] = NULL;
-        m->thoughts[i] = NULL;
         i++;
     }
     i = 0;
     char valid = 1;
     while (i < m->x && valid)
     {
-        m->cells[i] = malloc(sizeof(int) * m->y);
-        m->thoughts[i] = malloc(sizeof(char) * m->y);
-        m->items[i] = malloc(sizeof(struct item) * m->y);
-        m->cinematic_triggers[i] = malloc(sizeof(long) * m->y);
-        valid = (m->cells[i] != NULL && m->items[i] != NULL && m->thoughts[i] != NULL && m->cinematic_triggers[i] != NULL);
+        m->cells[i] = malloc(sizeof(struct cell) * m->y);
+        valid = (m->cells[i] != NULL);
         i++;
     }
     if (valid)
@@ -467,11 +470,7 @@ char load_map(struct map *m)
         i = 0;
         while (i < m->x && valid)
         {
-            valid = load_int_list(m->cells[i], m->y);
-            if (valid)
-                valid = load_item_list(m->items[i], m->y);
-            if (valid)
-                valid = load_char_list(m->thoughts[i], m->y);
+            valid = load_cells_list(m->cells[i], m->y);
             i++;
         }
     }
@@ -481,20 +480,12 @@ char load_map(struct map *m)
         while (i < m->x)
         {
             free(m->cells[i]);
-            free(m->items[i]);
-            free(m->cinematic_triggers[i]);
-            free(m->thoughts[i]);
             i++;
         }
         free(m->cells);
-        free(m->items);
-        free(m->thoughts);
-        free(m->cinematic_triggers);
         free(m->color_sequency);
         m->x = 0;
         m->cells = NULL;
-        m->items = NULL;
-        m->thoughts = NULL;
         m->color_sequency = NULL;
         return 0;
     }
@@ -519,12 +510,10 @@ char load_map_list(struct zone *zone)
         while (i)
         {
             i--;
-            free_map(zone->maps[i]);
+            free_map(zone->maps + i);
             zone->maps[i].x = 0;
             zone->maps[i].cells = NULL;
-            zone->maps[i].items = NULL;
             zone->maps[i].color_sequency = NULL;
-            zone->maps[i].thoughts = NULL;
         }
         free(zone->maps);
         zone->maps = NULL;
@@ -687,7 +676,7 @@ char load_save()
     p.zones = malloc(sizeof(struct zone) * project_data.parameters[11]);
     if (p.zones == NULL)
     {
-        free_save_data(s);
+        free_save_data(&s);
         i = 0;
         while (i < 5)
         {
@@ -710,7 +699,7 @@ char load_save()
     }
     if (!valid)
     {
-        free_save_data(s);
+        free_save_data(&s);
         free(p.containers);
         free(p.zones);
         i = 0;
@@ -762,7 +751,7 @@ char load_save()
     }
     if (!valid)
     {
-        free_save_data(s);
+        free_save_data(&s);
         free_project(p);
         return 0;
     }
@@ -776,7 +765,7 @@ char load_save()
     if (!valid)
     {
         free(cinematic_states);
-        free_save_data(s);
+        free_save_data(&s);
         free_project(p);
         return 0;
     }
@@ -818,8 +807,6 @@ char load_save()
                 while (l < project_data.zones[i].maps[j].y)
                 {
                     project_data.zones[i].maps[j].cells[k][l] = p.zones[i].maps[j].cells[k][l];
-                    project_data.zones[i].maps[j].items[k][l] = p.zones[i].maps[j].items[k][l];
-                    project_data.zones[i].maps[j].thoughts[k][l] = p.zones[i].maps[j].thoughts[k][l];
                     int c = 0;
                     while (c < 5)
                     {
@@ -861,7 +848,7 @@ char load_save()
     }
     reload_with_character(player);
     free(cinematic_states);
-    free_save_data(s);
+    free_save_data(&s);
     free_project(p);
     return 1;
 }

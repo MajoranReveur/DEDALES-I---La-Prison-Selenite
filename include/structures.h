@@ -67,10 +67,20 @@ struct portal
     struct position portal_position;
 };
 
+struct cell
+{
+    int type;
+    char thought;
+    long cinematic_trigger; //Not saved
+    struct item item;
+    int sprite;
+    int first_sprite;
+};
+
 struct map_backup
 {
-    int** cells;
-    struct item **items;
+    struct cell** cells;
+    //struct item **items;
 };
 
 struct zone_backup
@@ -171,14 +181,15 @@ struct map
     int y;
     int x_start;
     int y_start;
-    int remaining_green_cells;
+    int remaining_green_cells; //Not saved
     int initial_delay;
     int color_length; //Length of color_sequency
     int* color_sequency;
-    int** cells;
+    /*int** cells;
     char** thoughts;
     long** cinematic_triggers;
-    struct item **items;
+    struct item **items;*/
+    struct cell** cells;
 };
 
 struct zone
@@ -205,9 +216,9 @@ struct project
 void free_cinematic_event(struct cinematic_event *c);
 void free_cinematic(struct cinematic *c);
 void free_container(struct container c);
-void free_map(struct map r);
+void free_map(struct map *r);
 void free_project(struct project p);
-void free_save_data(struct savedatas s);
+void free_save_data(struct savedatas *s);
 void free_backup();
 void delete_container(long ID);
 
